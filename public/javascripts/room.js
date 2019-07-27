@@ -9,6 +9,8 @@ for (let i = 0; i < 34; i++) {
     pai_img[i] = img;
 }
 
+document.getElementById('canvas').style.visibility = "hidden";
+
 socket.on('haipai', haipai => {
     console.log(haipai);
     var canvas = document.getElementById('canvas');
@@ -27,5 +29,6 @@ socket.on('tsumo', function (tsumoPai) {
 });
 
 document.getElementById('restart-button').addEventListener("click", ()=>{
+    document.getElementById('canvas').style.visibility = "visible";
     socket.emit('restart');
 });
