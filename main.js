@@ -1,8 +1,10 @@
 module.exports = function(io) {
     // サーバー側処理のエントリポイント
-    console.log('hello');
-
-    io.on('connection', function() {
+    io.on('connection', function(socket) {
         console.log("user connected");
+        socket.on('dahai', function(dahai) {
+            console.log(dahai);
+            socket.emit('tsumo', 1);
+        });
     });
 };
