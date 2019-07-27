@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="jp">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Document</title>
+</head>
+
+<body>
+<canvas id="canvas" width="640" height="480"></canvas>
+<script>
+    var canvas = document.getElementById("canvas");
+    // ここにコードを書いていきます
+    var ctx = canvas.getContext('2d');
+    /* Imageオブジェクトを生成 */
+    var img = new Image();
+
+    /* 画像を描画 */
+    img.addEventListener('load', function () {
+        // execute drawImage statements here
+        console.log('hello');
+        ctx.drawImage(img, 1, 1);
+    }, false);
+    img.src = "images/test.jpeg";
+</script>
+</body>
+
+</html>
