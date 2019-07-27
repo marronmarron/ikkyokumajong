@@ -11,3 +11,7 @@ socket.on('haipai', haipai => {
 socket.on('tsumo', function(tsumoPai) {
     console.log(tsumoPai);
 });
+
+document.getElementById('restart-button').addEventListener("click", ()=>{
+    socket.emit('restart');
+});
