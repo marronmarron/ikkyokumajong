@@ -43,7 +43,6 @@ class GameState {
                 return;
             }
             this.dahai(pai, this.turn);
-            console.log('dahai : player=' + this.turn + 'pai=' + pai);
             // this.turn = ++this.turn%4;
             this.tsumo(this.turn);
         });
@@ -68,15 +67,15 @@ class GameState {
         }
         player.tehai = player.tehai.filter(it => it !== pai);
         this.io.in(this.room).emit('dahai', turn, pai);
-        this.turn = ++this.turn%4;
-        this.tsumo(this.turn);
     }
 
     tsumo(turn) {
         const pai = this.yama.pop();
         this.player[turn].tehai.push(pai);
         console.log('tsumo : player=' + turn + ' pai=' + pai);
-        this.io.to(this.player[turn].id).emit('tsumo', pai);
+        _.forEach(this.player, p => {
+            this.io.to(p.id).emit('tsumo', turn, turn === p.kaze ? pai : -1)
+        });
     }
 
     gameStart() {
@@ -92,7 +91,7 @@ class GameState {
             _.times(13, () => {tehai.push(this.yama.pop())});
 
             p.tehai = tehai.sort((a, b) => a - b);
-            this.io.to(p.id).emit('haipai', p.tehai);
+            this.io.to(p.id).emit('haipai', p.tehai, p.kaze);
         }));
     }
 }

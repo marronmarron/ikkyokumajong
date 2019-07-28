@@ -26,7 +26,7 @@ socket.on('haipai', haipai => {
     drawTehai();
 });
 
-socket.on('tsumo', function (tsumoPai) {
+socket.on('tsumo', function (_, tsumoPai) {
     console.log('tsumo : ' + tsumoPai);
     ctx.drawImage(pai_img[Math.floor(tsumoPai / 4)], tsumo_left, canvas.height - pai_hei);
     tehai.push(tsumoPai)//一時的に手牌１４枚になる
