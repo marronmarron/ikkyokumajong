@@ -47,10 +47,10 @@ socket.on('haipai', (haipai, jikaze) => {
 });
 
 socket.on('tsumo', function (turn, tsumoPai) {
-    console.log('tsumo: player=' + turn + ' pai=' + tsumoPai);
+    console.log('tsumo: turn=' + turn + ' pai=' + tsumoPai);
     g_turn = turn;
     --g_yama;
-    if (g_turn == g_jikaze) {
+    if (g_turn === g_jikaze) {
         g_tehai.push(tsumoPai);
     }
     drawAll();
@@ -58,7 +58,7 @@ socket.on('tsumo', function (turn, tsumoPai) {
 
 //turn !== g_jikaze
 socket.on('dahai', (turn, pai) => {
-    console.log('dahai: player=' + turn +' pai=' + pai);
+    console.log('dahai: turn=' + turn +' pai=' + pai);
     g_players[turn].ho.push(pai);
 });
 
@@ -79,7 +79,7 @@ document.getElementById('restart-button').addEventListener("click", ()=>{
 });
 
 function onClick(e) {
-    if (tehai.length < 14) return;
+    if (g_turn !== g_jikaze) return;
     const x = e.clientX - canvas.offsetLeft;
     const y = e.clientY - canvas.offsetTop;
     if (x < left || y > canvas.height || y < canvas.height - pai_hei) return;
@@ -94,17 +94,27 @@ function onClick(e) {
     }
 }
 
-function drawMyTehai() {
+function drawMe() {
     let le = left;
     for (let i = 0; i < 13; i++) {
         ctx.drawImage(pai_img[Math.floor(g_tehai[i] / 4)], le, canvas.height - pai_hei);
         le += pai_wid;
     }
+    if (g_turn === g_jikaze) {
+        ctx.drawImage(pai_img[Math.floor(g_tehai[13] / 4)], tsumo_left, canvas.height - pai_hei)
+    }
 }
+
+
 
 function drawAll() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    drawMyTehai();
+    drawMe();
+    drawHo();
+    drawShimo();
+    drawToimen();
+    drawKami();
+    drawYama();
 }
 
 canvas.addEventListener('click', onClick, false);
