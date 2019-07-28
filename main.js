@@ -76,7 +76,11 @@ class GameState {
         const shanten = getShanten(this.player[turn].tehai);
         console.log('tsumo : player=' + turn + ' pai=' + pai + ' shanten=' + shanten);
         _.forEach(this.player, p => {
-            this.io.to(p.id).emit('tsumo', turn, turn === p.kaze ? pai : -1)
+            this.io.to(p.id).emit('tsumo',
+                turn,
+                turn === p.kaze ? pai : -1,
+                turn === p.kaze ? (shanten > 0 ? 1 : shanten) : 6
+            );
         });
     }
 
