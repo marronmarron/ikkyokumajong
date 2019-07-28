@@ -26,7 +26,7 @@ tehai_img[0].addEventListener('load', function() {
     tsumo_left = (canvas.width + 13 * tehai_img[0].width) / 2 + 8;
 })
 const pai_yoko = 10;
-const pai_tate = 44;
+const pai_tate = 38;
 
 class Player {
     constructor() {
@@ -43,12 +43,12 @@ let g_dora;
 let g_turn;
 let g_players = []
 
-//TODO 引数にdoraを入れる、yamaの枚数
+//TODO 引数にdoraを入れる
 socket.on('haipai', (haipai, jikaze) => {
     console.log('haipai: haipai=' + haipai + ' jikaze=' + jikaze);
     g_jikaze = jikaze;
     g_turn = -1;
-    g_yama = 100;
+    g_yama = 84;
     for (let i=0; i<4; ++i) {
         g_players[i] = new Player();
     }
@@ -124,13 +124,15 @@ function drawMe() {
 }
 
 function drawHo() {
-    let lx = (canvas.width - 6 * ho_img[0][0].width) / 2;
+    const mag = 0.85
+    let lx = (canvas.width - 6 * ho_img[0][0].width * mag) / 2;
     let ly = (canvas.height + 6 * pai_yoko) / 2;
     for (let i=0; i<g_players[g_jikaze].ho.length; ++i) {
-        ctx.drawImage(ho_img[0][Math.floor(g_players[g_jikaze].ho[i] / 4)], lx, ly);
-        lx += ho_img[0][0].width;
+        const img = ho_img[0][Math.floor(g_players[g_jikaze].ho[i] / 4)];
+        ctx.drawImage(img, lx, ly, img.width * mag, img.height * mag);
+        lx += ho_img[0][0].width * mag;
         if (i % 6 === 5) {
-            lx = (canvas.width - 6 * ho_img[0][0].width) / 2;
+            lx = (canvas.width - 6 * ho_img[0][0].width * mag) / 2;
             ly += pai_tate;
         }
     }
