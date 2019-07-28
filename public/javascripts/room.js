@@ -11,6 +11,7 @@ const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 let tehai = []
 pai_img[0].addEventListener('load', function() {
+    console.log("load complete");
     pai_wid = pai_img[0].width;
     pai_hei = pai_img[0].height;
     left = (canvas.width - 13 * pai_wid) / 2;
@@ -19,6 +20,7 @@ pai_img[0].addEventListener('load', function() {
 
 
 socket.on('haipai', haipai => {
+    console.log(haipai);
     haipai.sort((a, b) => a - b);
     tehai = haipai;
     drawTehai();

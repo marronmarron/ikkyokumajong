@@ -18,7 +18,7 @@ class GameState {
         socket.join(this.room);
         this.player.push(socket.id);
         if(this.player.length === 1) {
-            this.gameStart();
+            setTimeout(() => this.gameStart(), 1000);
             currentGameState = new GameState(this.io, 'room_' + ++current_room_id);
         }
 
