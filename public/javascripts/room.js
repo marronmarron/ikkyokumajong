@@ -70,9 +70,7 @@ socket.on('tsumo', function (turn, tsumoPai) {
 socket.on('can_reach', () => {
     console.log("can reach");
     //todo リーチするかしないかきく
-    if(yes) {
-        socket.emit('reach');
-    }
+    socket.emit('reach');
 });
 
 socket.on('reach', (player) => {
@@ -91,7 +89,7 @@ socket.on('dahai', (turn, pai) => {
 
 function self_dahai(te_num) {
     const da_pai = g_tehai[te_num];
-    socket.emit('dahai', da_pai, try_reach);
+    socket.emit('dahai', da_pai);
     g_tehai[te_num] = g_tehai[13];
     g_tehai.pop();
     g_tehai.sort((a, b) => a - b);
