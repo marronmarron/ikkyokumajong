@@ -38,10 +38,11 @@ class GameState {
         }
 
         socket.on('dahai', pai => {
-            if(socket.id !== this.player[this.turn]) {
+            if(socket.id !== this.player[this.turn].id) {
+                console.log("turn error");
                 return;
             }
-            this.dahai(pai);
+            this.dahai(pai, this.turn);
         });
 
         socket.on('restart', () => {
@@ -55,35 +56,41 @@ class GameState {
         this.player = this.player.filter(p => p.id !== id);
     }
 
-    dahai(pai) {
-        console.log('dahai : player=' + this.turn + 'pai=' + pai);
-        if(!this.player[this.turn].tehai.includes(pai)) {
+    dahai(pai, turn) {
+        console.log('dahai : player=' + this.turn + ' pai=' + pai);
+        const player = this.player[turn];
+        if(!player.tehai.includes(pai)) {
+            console.log("tehai error : tehai=" + player.tehai + " pai=" + pai);
             return;
         }
+        player.tehai = player.tehai.filter(it => it !== pai);
+        this.io.in(this.room).emit('dahai', turn, pai);
         this.turn = ++this.turn%4;
         this.tsumo(this.turn);
     }
 
     tsumo(turn) {
         const pai = this.yama.pop();
+        this.player[turn].tehai.push(pai);
         console.log('tsumo : player=' + turn + ' pai=' + pai);
-        this.io.to(this.player[turn]).emit('tsumo', pai);
+        this.io.to(this.player[turn].id).emit('tsumo', pai);
     }
 
     gameStart() {
         console.log("GAME START " + this.room);
         this.yama = createYama();
-        _.forEach(this.player, (p => {
-            p.tehai = this.haipai();
-            this.io.to(p.id).emit('haipai', p.tehai);
-        }));
+        this.haipai();
         this.tsumo(0);
     }
 
     haipai() {
-        const tehai = [];
-        _.times(13, () => {tehai.push(this.yama.pop())});
-        return tehai;
+        _.forEach(this.player, (p => {
+            const tehai = [];
+            _.times(13, () => {tehai.push(this.yama.pop())});
+
+            p.tehai = tehai.sort((a, b) => a - b);
+            this.io.to(p.id).emit('haipai', p.tehai);
+        }));
     }
 }
 

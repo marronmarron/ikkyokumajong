@@ -18,10 +18,15 @@ socket.on('haipai', haipai => {
         ctx.drawImage(pai_img[Math.floor(haipai[i] / 4)], left, canvas.height - pai_hei);
         left += pai_wid;
     }
+    console.log("haipai = " + haipai);
 });
 
 socket.on('tsumo', function (tsumoPai) {
     console.log('tsumo : ' + tsumoPai);
+});
+
+socket.on('dahai', (turn, pai) => {
+    console.log('dahai : player=' + turn +' pai=' + pai);
 });
 
 function dahai(pai) {
