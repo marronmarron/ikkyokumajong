@@ -1,49 +1,89 @@
 const socket = io();
 
-let pai_img = [];
-for (let i = 0; i < 34; i++) {
-    var img = new Image();
-    img.src = "./images/pai/" + i + ".gif";
-    pai_img[i] = img;
-}
-
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
-let tehai = []
-pai_img[0].addEventListener('load', function() {
+
+
+function load_imgs(dir) {
+    let imgs = [];
+    for (let i=0; i<34; ++i) {
+        let img = new Image();
+        img.src = "./images/" + dir + "/" + i + ".gif"
+        imgs.push(img);
+    }
+    return imgs;
+}
+
+const tehai_img = load_imgs("pai");
+let ho_img = [];
+for (let i=0; i<4; ++i) {
+    ho_img.push(load_imgs("pai_" + i));
+}
+
+tehai_img[0].addEventListener('load', function() {
     console.log("load complete");
-    pai_wid = pai_img[0].width;
-    pai_hei = pai_img[0].height;
-    left = (canvas.width - 13 * pai_wid) / 2;
-    tsumo_left = (canvas.width + 13 * pai_wid) / 2 + 8;
+    left = (canvas.width - 13 * tehai_img[0].width) / 2;
+    tsumo_left = (canvas.width + 13 * tehai_img[0].width) / 2 + 8;
 })
+const pai_yoko = 10;
+const pai_tate = 44;
 
+class Player {
+    constructor() {
+        this.num_tehai = 13;//ツモ牌は含めない
+        this.ho = [];
+    }
+}
 
-socket.on('haipai', haipai => {
-    console.log(haipai);
-    haipai.sort((a, b) => a - b);
-    tehai = haipai;
-    drawTehai();
+let g_tehai = []
+let g_jikaze;
+
+let g_yama;
+let g_dora;
+let g_turn;
+let g_players = []
+
+//TODO 引数にdoraを入れる、yamaの枚数
+socket.on('haipai', (haipai, jikaze) => {
+    console.log('haipai: haipai=' + haipai + ' jikaze=' + jikaze);
+    g_jikaze = jikaze;
+    g_turn = -1;
+    g_yama = 100;
+    for (let i=0; i<4; ++i) {
+        g_players[i] = new Player();
+    }
+    g_tehai = haipai;
+    g_tehai.sort((a, b) => a - b);
+    drawAll();
 });
 
-socket.on('tsumo', function (_, tsumoPai) {
-    console.log('tsumo : ' + tsumoPai);
-    ctx.drawImage(pai_img[Math.floor(tsumoPai / 4)], tsumo_left, canvas.height - pai_hei);
-    tehai.push(tsumoPai)//一時的に手牌１４枚になる
+socket.on('tsumo', function (turn, tsumoPai) {
+    console.log('tsumo: turn=' + turn + ' pai=' + tsumoPai);
+    g_turn = turn;
+    --g_yama;
+    if (g_turn === g_jikaze) {
+        g_tehai.push(tsumoPai);
+    }
+    drawAll();
 });
 
+//turn === g_jikaze になることもある
 socket.on('dahai', (turn, pai) => {
-    console.log('dahai : player=' + turn +' pai=' + pai);
+    console.log('dahai: turn=' + turn +' pai=' + pai);
+    g_players[turn].ho.push(pai);
+    g_turn = -1;
+    drawAll();
 });
 
-function dahai(te_num) {
-    const da_pai = tehai[te_num];
-    console.log('dahai : ' + da_pai);
+function self_dahai(te_num) {
+    const da_pai = g_tehai[te_num];
     socket.emit('dahai', da_pai);
-    tehai[te_num] = tehai[13];
-    tehai.pop();
-    tehai.sort((a, b) => a - b);
-    drawTehai();
+    g_tehai[te_num] = g_tehai[13];
+    g_tehai.pop();
+    g_tehai.sort((a, b) => a - b);
+    // g_players[g_jikaze].ho.push(da_pai);
+    // g_turn = -1;
+    // drawAll();
 }
 
 document.getElementById('restart-button').addEventListener("click", ()=>{
@@ -52,28 +92,69 @@ document.getElementById('restart-button').addEventListener("click", ()=>{
 });
 
 function onClick(e) {
-    if (tehai.length < 14) return;
+    if (g_turn !== g_jikaze) return;
     const x = e.clientX - canvas.offsetLeft;
     const y = e.clientY - canvas.offsetTop;
-    if (x < left || y > canvas.height || y < canvas.height - pai_hei) return;
+    if (x < left || y > canvas.height || y < canvas.height - tehai_img[0].height) return;
     for (let i=0; i<13; ++i) {
-        if (x < left + (i+1) * pai_wid) {
-            dahai(i);
+        if (x < left + (i+1) * tehai_img[0].width) {
+            self_dahai(i);
             return;
         }
     }
-    if (x >= tsumo_left && x < tsumo_left + pai_wid) {
-        dahai(13);
+    if (x >= tsumo_left && x < tsumo_left + tehai_img[0].width) {
+        self_dahai(13);
     }
 }
 
-function drawTehai() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+function drawMe() {
     let le = left;
     for (let i = 0; i < 13; i++) {
-        ctx.drawImage(pai_img[Math.floor(tehai[i] / 4)], le, canvas.height - pai_hei);
-        le += pai_wid;
+        ctx.drawImage(tehai_img[Math.floor(g_tehai[i] / 4)], le, canvas.height - tehai_img[0].height);
+        le += tehai_img[0].width;
     }
+    if (g_turn === g_jikaze) {
+        ctx.drawImage(tehai_img[Math.floor(g_tehai[13] / 4)], tsumo_left, canvas.height - tehai_img[0].height)
+    }
+}
+
+function drawHo() {
+    let lx = (canvas.width - 6 * ho_img[0][0].width) / 2;
+    let ly = (canvas.height + 6 * pai_yoko) / 2;
+    for (let i=0; i<g_players[g_jikaze].ho.length; ++i) {
+        ctx.drawImage(ho_img[0][Math.floor(g_players[g_jikaze].ho[i] / 4)], lx, ly);
+        lx += ho_img[0][0].width;
+        if (i % 6 === 5) {
+            lx = (canvas.width - 6 * ho_img[0][0].width) / 2;
+            ly += pai_tate;
+        }
+    }
+}
+
+function drawShimo() {
+
+}
+
+function drawToimen() {
+
+}
+
+function drawKami() {
+
+}
+
+function drawYama() {
+
+}
+
+function drawAll() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawMe();
+    drawHo();
+    drawShimo();
+    drawToimen();
+    drawKami();
+    drawYama();
 }
 
 canvas.addEventListener('click', onClick, false);
