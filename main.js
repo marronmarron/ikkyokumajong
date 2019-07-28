@@ -27,7 +27,7 @@ class GameState {
                 return;
             }
             console.log('dahai : player=' + this.turn + 'pai=' + pai);
-            this.turn = ++this.turn%4;
+            // this.turn = ++this.turn%4;
             this.tsumo(this.turn);
         });
 
