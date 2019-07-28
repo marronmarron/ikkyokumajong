@@ -105,7 +105,25 @@ function drawMe() {
     }
 }
 
+function drawHo() {
 
+}
+
+function drawShimo() {
+
+}
+
+function drawToimen() {
+
+}
+
+function drawKami() {
+
+}
+
+function drawYama() {
+    
+}
 
 function drawAll() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
