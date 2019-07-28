@@ -32,8 +32,8 @@ class GameState {
     addPlayer(socket) {
         socket.join(this.room);
         this.player.push(new Player(socket, this.room, this.player.length));
-        if(this.player.length === 4) {
-            this.gameStart();
+        if(this.player.length === 1) {
+            setTimeout(() => this.gameStart(), 1000);
             currentGameState = new GameState(this.io, 'room_' + ++current_room_id);
         }
 
@@ -43,10 +43,13 @@ class GameState {
                 return;
             }
             this.dahai(pai, this.turn);
+            console.log('dahai : player=' + this.turn + 'pai=' + pai);
+            // this.turn = ++this.turn%4;
+            this.tsumo(this.turn);
         });
 
         socket.on('restart', () => {
-            if(this.player.length === 4) {
+            if(this.player.length === 1) {
                 this.gameStart();
             }
         });
