@@ -67,6 +67,11 @@ socket.on('tsumo', function (turn, tsumoPai) {
     drawAll();
 });
 
+socket.on('can_reach', () => {
+    console.log("can reach");
+    socket.emit('reach');
+});
+
 //turn === g_jikaze になることもある
 socket.on('dahai', (turn, pai) => {
     console.log('dahai: turn=' + turn +' pai=' + pai);
