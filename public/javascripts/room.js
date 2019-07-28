@@ -23,6 +23,12 @@ socket.on('tsumo', function (tsumoPai) {
     console.log('tsumo : ' + tsumoPai);
 });
 
+function dahai(pai) {
+    console.log('dahai : ' + pai);
+    socket.emit('dahai', pai);
+}
+
 document.getElementById('restart-button').addEventListener("click", ()=>{
+    console.log("restart");
     socket.emit('restart');
 });
