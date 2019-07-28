@@ -1,15 +1,14 @@
 const socket = io();
 
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
 let pai_img = [];
 for (let i = 0; i < 34; i++) {
     var img = new Image();
     img.src = "./images/pai/" + i + ".gif";
     pai_img[i] = img;
 }
-
-const canvas = document.getElementById('canvas');
-const ctx = canvas.getContext('2d');
-let tehai = []
 pai_img[0].addEventListener('load', function() {
     console.log("load complete");
     pai_wid = pai_img[0].width;
@@ -18,32 +17,60 @@ pai_img[0].addEventListener('load', function() {
     tsumo_left = (canvas.width + 13 * pai_wid) / 2 + 8;
 })
 
+class Player {
+    constructer() {
+        num_tehai = 13;//ツモ牌は含めない
+        ho = [];
+    }
+}
 
-socket.on('haipai', haipai => {
-    console.log(haipai);
-    haipai.sort((a, b) => a - b);
-    tehai = haipai;
-    drawTehai();
+let g_tehai = []
+let g_jikaze;
+
+let g_yama;
+let g_dora;
+let g_turn;
+let g_players = []
+
+//TODO 引数にdoraを入れる、yamaの枚数
+socket.on('haipai', (haipai, jikaze) => {
+    console.log('haipai: haipai=' + haipai + ' jikaze=' + jikaze);
+    g_jikaze = jikaze;
+    g_turn = -1;
+    g_yama = 100;
+    for (let i=0; i<4; ++i) {
+        g_players[i] = new Player();
+    }
+    g_tehai = haipai;
+    g_tehai.sort((a, b) => a - b);
+    drawAll();
 });
 
-socket.on('tsumo', function (_, tsumoPai) {
-    console.log('tsumo : ' + tsumoPai);
-    ctx.drawImage(pai_img[Math.floor(tsumoPai / 4)], tsumo_left, canvas.height - pai_hei);
-    tehai.push(tsumoPai)//一時的に手牌１４枚になる
+socket.on('tsumo', function (turn, tsumoPai) {
+    console.log('tsumo: player=' + turn + ' pai=' + tsumoPai);
+    g_turn = turn;
+    --g_yama;
+    if (g_turn == g_jikaze) {
+        g_tehai.push(tsumoPai);
+    }
+    drawAll();
 });
 
+//turn !== g_jikaze
 socket.on('dahai', (turn, pai) => {
-    console.log('dahai : player=' + turn +' pai=' + pai);
+    console.log('dahai: player=' + turn +' pai=' + pai);
+    g_players[turn].ho.push(pai);
 });
 
 function dahai(te_num) {
-    const da_pai = tehai[te_num];
-    console.log('dahai : ' + da_pai);
+    const da_pai = g_tehai[te_num];
     socket.emit('dahai', da_pai);
-    tehai[te_num] = tehai[13];
-    tehai.pop();
-    tehai.sort((a, b) => a - b);
-    drawTehai();
+    g_tehai[te_num] = g_tehai[13];
+    g_tehai.pop();
+    g_tehai.sort((a, b) => a - b);
+    g_players[g_jikaze].ho.push(da_pai);
+    g_turn = -1;
+    drawAll();
 }
 
 document.getElementById('restart-button').addEventListener("click", ()=>{
@@ -67,13 +94,17 @@ function onClick(e) {
     }
 }
 
-function drawTehai() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+function drawMyTehai() {
     let le = left;
     for (let i = 0; i < 13; i++) {
-        ctx.drawImage(pai_img[Math.floor(tehai[i] / 4)], le, canvas.height - pai_hei);
+        ctx.drawImage(pai_img[Math.floor(g_tehai[i] / 4)], le, canvas.height - pai_hei);
         le += pai_wid;
     }
+}
+
+function drawAll() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawMyTehai();
 }
 
 canvas.addEventListener('click', onClick, false);
