@@ -69,8 +69,17 @@ socket.on('tsumo', function (turn, tsumoPai) {
 
 socket.on('can_reach', () => {
     console.log("can reach");
-    socket.emit('reach');
+    //todo リーチするかしないかきく
+    if(yes) {
+        socket.emit('reach');
+    }
 });
+
+socket.on('reach', (player) => {
+    // TODO 誰かがリーチした通知の処理
+    console.log("reach : player=" + player);
+});
+
 
 //turn === g_jikaze になることもある
 socket.on('dahai', (turn, pai) => {
@@ -82,7 +91,7 @@ socket.on('dahai', (turn, pai) => {
 
 function self_dahai(te_num) {
     const da_pai = g_tehai[te_num];
-    socket.emit('dahai', da_pai);
+    socket.emit('dahai', da_pai, try_reach);
     g_tehai[te_num] = g_tehai[13];
     g_tehai.pop();
     g_tehai.sort((a, b) => a - b);
