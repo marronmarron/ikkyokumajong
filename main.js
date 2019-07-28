@@ -1,4 +1,5 @@
 const _ = require('lodash');
+const getShanten = require('./shanten');
 
 class Player {
     socket;
@@ -72,9 +73,14 @@ class GameState {
     tsumo(turn) {
         const pai = this.yama.pop();
         this.player[turn].tehai.push(pai);
-        console.log('tsumo : player=' + turn + ' pai=' + pai);
+        const shanten = getShanten(this.player[turn].tehai);
+        console.log('tsumo : player=' + turn + ' pai=' + pai + ' shanten=' + shanten);
         _.forEach(this.player, p => {
-            this.io.to(p.id).emit('tsumo', turn, turn === p.kaze ? pai : -1)
+            this.io.to(p.id).emit('tsumo',
+                turn,
+                turn === p.kaze ? pai : -1,
+                turn === p.kaze ? (shanten > 0 ? 1 : shanten) : 6
+            );
         });
     }
 
