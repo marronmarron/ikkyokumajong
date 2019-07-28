@@ -1,6 +1,6 @@
 const socket = io();
 
-pai_img = [];
+let pai_img = [];
 for (let i = 0; i < 34; i++) {
     var img = new Image();
     img.src = "./images/pai/" + i + ".gif";
@@ -8,13 +8,14 @@ for (let i = 0; i < 34; i++) {
 }
 
 socket.on('haipai', haipai => {
-    console.log('haipai : ' + haipai);
+    haipai.sort((a, b) => a - b);
     var canvas = document.getElementById('canvas');
     var ctx = canvas.getContext('2d');
-    let left = 0;
     const pai_wid = pai_img[0].width;
+    const pai_hei = pai_img[0].height;
+    let left = (canvas.width - 13 * pai_wid) / 2
     for (let i = 0; i < 13; i++) {
-        ctx.drawImage(pai_img[Math.floor(haipai[i] / 4)], left, 10);
+        ctx.drawImage(pai_img[Math.floor(haipai[i] / 4)], left, canvas.height - pai_hei);
         left += pai_wid;
     }
 });
