@@ -17,7 +17,7 @@ class GameState {
     addPlayer(socket) {
         socket.join(this.room);
         this.player.push(socket.id);
-        if(this.player.length === 4) {
+        if(this.player.length === 1) {
             this.gameStart();
             currentGameState = new GameState(this.io, 'room_' + ++current_room_id);
         }
@@ -32,7 +32,7 @@ class GameState {
         });
 
         socket.on('restart', () => {
-            if(this.player.length === 4) {
+            if(this.player.length === 1) {
                 this.gameStart();
             }
         });
