@@ -43,12 +43,12 @@ let g_dora;
 let g_turn;
 let g_players = []
 
-//TODO 引数にdoraを入れる、yamaの枚数
+//TODO 引数にdoraを入れる
 socket.on('haipai', (haipai, jikaze) => {
     console.log('haipai: haipai=' + haipai + ' jikaze=' + jikaze);
     g_jikaze = jikaze;
     g_turn = -1;
-    g_yama = 100;
+    g_yama = 84;
     for (let i=0; i<4; ++i) {
         g_players[i] = new Player();
     }
