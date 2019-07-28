@@ -118,8 +118,7 @@ function drawMe() {
     }
 }
 
-function drawHo() {
-    const mag = 0.85
+function drawMyHo(mag) {
     let lx = (canvas.width - 6 * ho_img[0][0].width * mag) / 2;
     let ly = (canvas.height + 6 * pai_yoko) / 2;
     for (let i=0; i<g_players[g_jikaze].ho.length; ++i) {
@@ -131,6 +130,65 @@ function drawHo() {
             ly += pai_tate;
         }
     }
+}
+
+function drawShimoHo(mag) {
+    const ho = g_players[(g_jikaze+1)%4].ho;
+    const llx = (canvas.width + 6 * ho_img[0][0].width * mag) / 2;
+    const lly = (canvas.height + 6 * pai_yoko) / 2;
+    let lx = llx + ho_img[1][0].width * Math.floor((ho.length - 1) / 6);
+    let ly = lly - pai_yoko * (ho.length - 1) % 6;
+    for (let i=ho.length - 1; i >= 0; --i) {
+        const img = ho_img[1][Math.floor(ho[i] / 4)];
+        ctx.drawInage(img, lx, ly, img.width * mag, img.height * mag);
+        ly += pai_yoko;
+        if (i % 6 == 0) {
+            lx -= ho_img[1].width * mag;
+            ly = lly + 5 * pay_yoko;
+        }
+    }
+}
+
+function drawKamiHo(mag) {
+    const ho = g_players[(g_jikaze+3)%4].ho;
+    let lx = (canvas.width - 6 * ho_img[0][0].width * mag) / 2 - ho_img[3][0].width;
+    const lly = (canvas.height - 6 * pai_yoko) / 2;
+    let ly = lly;
+    for (let i=0; i < ho.length; -++i) {
+        const img = ho_img[3][Math.floor(ho[i] / 4)];
+        ctx.drawInage(img, lx, ly, img.width * mag, img.height * mag);
+        ly += pai_yoko;
+        if (i % 6 == 5) {
+            lx -= ho_img[3].width * mag;
+            ly = lly;
+        }
+    }
+}
+
+function drawToimenHo(mag) {
+    const ho = g_players[(g_jikaze+2)%4].ho;
+    const llx = (canvas.width + 6 * ho_img[2][0].width * mag) / 2 - ho_img[2][0].width;
+    const lly = (canvas.height - 6 * pai_yoko) / 2 - ho_img[2][0].height;
+    let ly = lly - pai_tate * Math.floor((ho.length - 1) / 6);
+    let lx = llx - ho_img[2][0].width * mag * (ho.length - 1) % 6;
+    for (let i=ho.length - 1; i >= 0; --i) {
+        const img = ho_img[2][Math.floor(ho[i] / 4)];
+        ctx.drawInage(img, lx, ly, img.width * mag, img.height * mag);
+        lx += img.width * mag;
+        if (i % 6 == 0) {
+            lx = llx - 5 * img.width * mag;
+            ly -= pai_tate;
+        }
+    }
+}
+
+function drawHo() {
+    const mag = 0.85
+    drawMyHo(mag);
+    drawShimoHo(mag);
+    drawToimenHo(mag);
+    drawKamiHo(mag);
+
 }
 
 function drawShimo() {
