@@ -19,6 +19,16 @@ let ho_img = [];
 for (let i=0; i<4; ++i) {
     ho_img.push(load_imgs("pai_" + i));
 }
+let ura_img = []
+let img = new Image();
+img.src = "./images/ura/" + 0 + ".gif"
+ura_img.push(img);
+let yama_img = []
+for (let i=0; i<2; ++i) {
+    let img = new Image();
+    img.src = "./images/ura/yama_" + i + ".gif"
+    yama_img.push(img);
+}
 
 tehai_img[0].addEventListener('load', function() {
     console.log("load complete");
@@ -207,7 +217,15 @@ function drawShimo() {
 }
 
 function drawToimen() {
-
+    let toi = g_players[(g_jikaze + 2) % 4];
+    let right = (canvas.width + 13 * ura_img[0].width) / 2 - ura_img[0].width;
+    for (let i = 0; i < toi.num_tehai; i++) {
+        ctx.drawImage(ura_img[0], right, 0);
+        right -= ura_img[0].width;
+    }
+    if (g_turn === (g_jikaze + 2) % 4) {
+        ctx.drawImage(ura_img[0], right - 8, 0)
+    }
 }
 
 function drawKami() {
