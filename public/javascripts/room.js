@@ -82,6 +82,7 @@ socket.on('tsumo', function (turn, tsumoPai) {
     ++g_num_tsumo;
     if (g_turn === g_jikaze) {
         g_tehai.push(tsumoPai);
+        createOneTimeListener(canvas, 'click', onClickDahai);
     }
     drawAll();
 });
@@ -106,6 +107,12 @@ socket.on('dahai', (turn, pai) => {
     drawAll();
 });
 
+socket.on('naki',(naki) => {
+    const naki_pai = naki[0].pai;
+    console.log('naki: pai=' + naki[0].pai);
+    
+})
+
 function self_dahai(te_num) {
     console.log("self_dahai" + te_num);
     const da_pai = g_tehai[te_num];
@@ -123,8 +130,7 @@ document.getElementById('restart-button').addEventListener("click", ()=>{
     socket.emit('restart');
 });
 
-function onClick(e) {
-    if (g_turn !== g_jikaze) return;
+function onClickDahai(e) {
     var rect	= e.target.getBoundingClientRect();
     const x	= e.clientX - Math.floor(rect.left);
     const y	= e.clientY - Math.floor(rect.top);
@@ -246,38 +252,6 @@ function drawKami() {
 
 function drawYama() {
     const mag_tate = 0.85;
-    const mag_yoko = 0.75
-    const ini_x = 30;
-    const ini_y = [50, 60];
-    for (let b = 1; b >=0; --b) {
-        let lx = ini_x;
-        let ly = ini_y[b];
-        for (let i=b; i<102; i+=2) {
-            let img = yama_img[0];
-            let mag = mag_tate
-            if (Math.floor(i / 34) % 2 === 1) {
-                img = yama_img[1];
-                mag = mag_yoko
-            }
-            if (g_yama[i]) ctx.drawImage(img, lx, ly, img.width * mag_tate, img.height * mag);
-            switch (Math.floor(i / 34) % 4) {
-                case 0: lx += yama_img[0].width * mag_tate; break;
-                case 1: ly += 28; break;
-                case 2: lx -= yama_img[0].width * mag_tate; break;
-            }
-        }
-        lx = ini_x;
-        ly = ini_y[b] + 28;
-        for (let i=133-b; i>=101; i-=2) {
-            let img = yama_img[1];
-            if (g_yama[i]) ctx.drawImage(img, lx, ly, img.width * mag_yoko, img.height * mag_yoko);
-            ly += 28;
-        }
-    } 
-}
-
-function drawtmp() {
-    const mag_tate = 0.85;
     const mag_yoko = 0.73;
     const pai_tate = 12;
     const pai_yoko = 25;
@@ -331,8 +305,13 @@ function drawAll() {
     drawShimo();
     drawToimen();
     drawKami();
-    // drawYama();
-    drawtmp();
+    drawYama();
 }
 
-canvas.addEventListener('click', onClick, false);
+
+function createOneTimeListener(element, event, listener) {
+	element.addEventListener(event, function(e) {
+		element.removeEventListener(event, arguments.callee);
+		return listener(e);
+	});
+}
