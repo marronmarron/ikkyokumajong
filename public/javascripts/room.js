@@ -108,10 +108,11 @@ socket.on('dahai', (turn, pai) => {
 });
 
 socket.on('naki',(naki) => {
+    console.log(naki);
     const naki_pai = naki[0].pai;
     console.log('naki: pai=' + naki[0].pai);
     
-})
+});
 
 function self_dahai(te_num) {
     console.log("self_dahai" + te_num);
@@ -141,7 +142,6 @@ function onClickDahai(e) {
             return;
         }
     }
-        console.log(-1);
     if (x >= tsumo_left && x < tsumo_left + tehai_img[0].width) {
         self_dahai(13);
     }

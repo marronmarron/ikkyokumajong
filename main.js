@@ -83,7 +83,7 @@ class GameState {
             this.io.in(this.room).emit('dahai', this.turn, 17);
 
             //鳴けるorロンできるかをクライアントに通知
-            _.forEach(player, p => {
+            _.forEach(this.player.filter(it => it !== player), p => {
                 const naki = [];
 
                 // ロンチェック
@@ -91,7 +91,7 @@ class GameState {
                 if(getShanten(p.tehai) === -1) {
                     naki.push({type: "ron", pai: pai})
                 }
-                p.tehai.filter(it => it !== pai);
+                p.tehai = p.tehai.filter(it => it !== pai);
 
                 // カンチェック
                 if(p.tehai34[pai34] === 3) {
@@ -111,24 +111,24 @@ class GameState {
                     // 上チー(34[5])チェック
                     if(num !== 0 && num!== 1 && p.tehai34[pai34-2] && p.tehai34[pai34-1]) {
                         const show = [
-                            _.find(tehai, it => Math.floor(it/4) === pai34-2),
-                            _.find(tehai, it => Math.floor(it/4) === pai34-1)
+                            _.find(p.tehai, it => Math.floor(it/4) === pai34-2),
+                            _.find(p.tehai, it => Math.floor(it/4) === pai34-1)
                         ];
                         naki.push({type: "chi", pai: pai, show: show});
                     }
                     // 中チー(4[5]6)チェック
                     if(num !== 0 && num!== 8 && p.tehai34[pai34-1] && p.tehai34[pai34+1]) {
                         const show = [
-                            _.find(tehai, it => Math.floor(it/4) === pai34-1),
-                            _.find(tehai, it => Math.floor(it/4) === pai34+1)
+                            _.find(p.tehai, it => Math.floor(it/4) === pai34-1),
+                            _.find(p.tehai, it => Math.floor(it/4) === pai34+1)
                         ];
                         naki.push({type: "chi", pai: pai, show: show});
                     }
                     // 下チー([5]67)チェック
                     if(num !== 7 && num!== 8 && p.tehai34[pai34+1] && p.tehai34[pai34+2]) {
                         const show = [
-                            _.find(tehai, it => Math.floor(it/4) === pai34+1),
-                            _.find(tehai, it => Math.floor(it/4) === pai34+2)
+                            _.find(p.tehai, it => Math.floor(it/4) === pai34+1),
+                            _.find(p.tehai, it => Math.floor(it/4) === pai34+2)
                         ];
                         naki.push({type: "chi", pai: pai, show: show});
                     }
@@ -263,7 +263,7 @@ class GameState {
             _.times(13, () => tehai.push(this.yama.pop()));
             // p.tehai = tehai.sort((a, b) => a - b);
             p.tehai = [8,12,16,18,19,20,24,129,130,131,133,134,135];
-            p.tehai34 = [];
+            p.tehai34 = Array(34).fill(0);
             _.forEach(p.tehai, pai => p.tehai34[Math.floor(pai/4)]++);
             this.io.to(p.id).emit('haipai', p.tehai, p.kaze);
         });
