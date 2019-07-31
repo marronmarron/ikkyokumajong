@@ -98,6 +98,7 @@ socket.on('dahai', (turn, pai) => {
 });
 
 function self_dahai(te_num) {
+    console.log("self_dahai" + te_num);
     const da_pai = g_tehai[te_num];
     socket.emit('dahai', da_pai);
     g_tehai[te_num] = g_tehai[13];
@@ -115,8 +116,11 @@ document.getElementById('restart-button').addEventListener("click", ()=>{
 
 function onClick(e) {
     if (g_turn !== g_jikaze) return;
-    const x = e.clientX - canvas.offsetLeft;
-    const y = e.clientY - canvas.offsetTop;
+    var rect	= e.target.getBoundingClientRect();
+    const x	= e.clientX - Math.floor(rect.left);
+    const y	= e.clientY - Math.floor(rect.top);
+    // const x = e.clientX - canvas.offsetLeft;
+    // const y = e.clientY - canvas.offsetTop;
     if (x < left || y > canvas.height || y < canvas.height - tehai_img[0].height) return;
     for (let i=0; i<13; ++i) {
         if (x < left + (i+1) * tehai_img[0].width) {
@@ -124,6 +128,7 @@ function onClick(e) {
             return;
         }
     }
+        console.log(-1);
     if (x >= tsumo_left && x < tsumo_left + tehai_img[0].width) {
         self_dahai(13);
     }

@@ -7,6 +7,7 @@ class Player {
     room;
     kaze;
     tehai;
+    tehai34;
     is_reach_try = false;
     is_reach = false;
     current_tsumo;
@@ -48,7 +49,9 @@ class GameState {
 
         // 打牌時の処理
         socket.on('dahai', pai => {
+            console.log(1);
             const player = this.player[this.turn];
+            const pai34 = Math.floor(pai/4);
             // 番じゃないdahaiを弾く
             if(socket.id !== player.id) {
                 console.log("dahai error : turn=" + this.turn);
@@ -66,18 +69,32 @@ class GameState {
             }
             // 手牌から切られた牌を除く
             player.tehai = player.tehai.filter(it => it !== pai);
+            player.tehai34[pai34]--;
 
             // リーチをかけたがテンパイしない打牌を弾く
             if(player.is_reach_try && getShanten(player.tehai) !== 0) {
                 player.tehai.push(pai);
+                player.tehai34[pai34]++;
                 console.log("dahai error : reach & tehai=" + player.tehai);
                 return;
             }
             // クライアントに通知 + 確認
             console.log('dahai : player=' + this.turn + ' pai=' + pai);
-            this.io.in(this.room).emit('dahai', this.turn, pai);
+            // this.io.in(this.room).emit('dahai', this.turn, pai);
+            this.io.in(this.room).emit('dahai', this.turn, 17);
 
-            //TODO ロン/鳴きチェック
+            // TODO ロン/鳴きチェック
+
+            //鳴けるorロンできるかをクライアントに通知
+            _.forEach(player, p => this.io.to(p.id).emit('naki', [
+                { type: "chi", pai: 17, show: [8, 12] },
+                { type: "chi", pai: 17, show: [12, 20] },
+                { type: "chi", pai: 17, show: [20, 24] },
+                { type: "pon", pai: 17, show: [16, 18] },
+                { type: "kan", pai: 17, show: [16, 18, 19] },
+                { type: "ron", pai: 17}
+            ]));
+
             this.current_dahai = pai;
             if(player.is_reach_try) {
                 player.is_reach = true;
@@ -99,11 +116,14 @@ class GameState {
             // ロンなら手牌にアガリ牌を入れてshanten = -1にしておく
             if(type === "ron") {
                 who.tehai.push(pai);
+                who.tehai34[pai]++;
             }
             // アガれていない手牌を弾く
             if(getShanten(who.tehai) !== -1) {
                 console.log("agari error : tehai = " + who.tehai);
-                if(type === "ron") who.tehai = _.filter(who.tehai, p !== pai);
+                if(type === "ron") {
+                    who.tehai = _.filter(who.tehai, p !== pai);
+                }
                 return;
             }
             // TODO 符計算/役計算/点数計算
@@ -120,7 +140,7 @@ class GameState {
                 fu: fu,
                 yaku: yaku,
                 ten: ten,
-            })
+            });
         });
 
         // リーチ時の処理
@@ -160,9 +180,12 @@ class GameState {
     // ツモ時の処理
     tsumo(turn) {
         const player = this.player[this.turn];
-        const pai = this.yama.pop();
+        // const pai = this.yama.pop();
+        const pai = 17;
+        const pai34 = Math.floor(pai/4);
         player.current_tsumo = pai;
         this.player[turn].tehai.push(pai);
+        this.player[turn].tehai34[pai34]++;
         const shanten = getShanten(this.player[turn].tehai);
         console.log('tsumo : player=' + turn + ' pai=' + pai + ' shanten=' + shanten);
 
@@ -193,7 +216,10 @@ class GameState {
         _.forEach(this.player, p => {
             const tehai = [];
             _.times(13, () => tehai.push(this.yama.pop()));
-            p.tehai = tehai.sort((a, b) => a - b);
+            // p.tehai = tehai.sort((a, b) => a - b);
+            p.tehai = [8,12,16,18,19,20,24,129,130,131,133,134,135];
+            p.tehai34 = [];
+            _.forEach(p.tehai, pai => p.tehai34[Math.floor(pai/4)]++);
             this.io.to(p.id).emit('haipai', p.tehai, p.kaze);
         });
     }
