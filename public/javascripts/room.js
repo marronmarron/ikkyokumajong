@@ -128,8 +128,6 @@ function onClick(e) {
     var rect	= e.target.getBoundingClientRect();
     const x	= e.clientX - Math.floor(rect.left);
     const y	= e.clientY - Math.floor(rect.top);
-    // const x = e.clientX - canvas.offsetLeft;
-    // const y = e.clientY - canvas.offsetTop;
     if (x < left || y > canvas.height || y < canvas.height - tehai_img[0].height) return;
     for (let i=0; i<13; ++i) {
         if (x < left + (i+1) * tehai_img[0].width) {
