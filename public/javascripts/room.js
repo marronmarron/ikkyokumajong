@@ -56,7 +56,9 @@ let g_turn;
 let g_players = []
 
 //TODO 引数にdoraを入れる
-socket.on('haipai', (haipai, jikaze) => {
+
+// socket.on('haipai', (haipai, jikaze) => {
+socket.on('haipai', (haipai, jikaze, dora, dice1, dice2) => {
     console.log('haipai: haipai=' + haipai + ' jikaze=' + jikaze);
     wareme = Math.floor(Math.random() * 68) * 2;
     g_yama = Array(136);
