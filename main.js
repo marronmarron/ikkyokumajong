@@ -49,7 +49,6 @@ class GameState {
 
         // 打牌時の処理
         socket.on('dahai', pai => {
-            console.log(1);
             const player = this.player[this.turn];
             const pai34 = Math.floor(pai/4);
             // 番じゃないdahaiを弾く
@@ -83,17 +82,63 @@ class GameState {
             // this.io.in(this.room).emit('dahai', this.turn, pai);
             this.io.in(this.room).emit('dahai', this.turn, 17);
 
-            // TODO ロン/鳴きチェック
-
             //鳴けるorロンできるかをクライアントに通知
-            _.forEach(player, p => this.io.to(p.id).emit('naki', [
-                { type: "chi", pai: 17, show: [8, 12] },
-                { type: "chi", pai: 17, show: [12, 20] },
-                { type: "chi", pai: 17, show: [20, 24] },
-                { type: "pon", pai: 17, show: [16, 18] },
-                { type: "kan", pai: 17, show: [16, 18, 19] },
-                { type: "ron", pai: 17}
-            ]));
+            _.forEach(player, p => {
+                const naki = [];
+
+                // ロンチェック
+                p.tehai.push(pai);
+                if(getShanten(p.tehai) === -1) {
+                    naki.push({type: "ron", pai: pai})
+                }
+                p.tehai.filter(it => it !== pai);
+
+                // カンチェック
+                if(p.tehai34[pai34] === 3) {
+                    const show = p.tehai.filter(it => Math.floor(it/4) === pai34);
+                    naki.push({type: "kan", pai: pai, show: show});
+                }
+
+                // ポンチェック
+                if(p.tehai34[pai34] >= 2) {
+                    const show = _.take(p.tehai.filter(it => Math.floor(it/4) === pai34), 2);
+                    naki.push({type: "pon", pai: pai, show: show});
+                }
+
+                // チーチェック
+                if(p.kaze === (this.turn+1)%4 && pai34 < 27) {
+                    const num = pai34%9;
+                    // 上チー(34[5])チェック
+                    if(num !== 0 && num!== 1 && p.tehai34[pai34-2] && p.tehai34[pai34-1]) {
+                        const show = [
+                            _.find(tehai, it => Math.floor(it/4) === pai34-2),
+                            _.find(tehai, it => Math.floor(it/4) === pai34-1)
+                        ];
+                        naki.push({type: "chi", pai: pai, show: show});
+                    }
+                    // 中チー(4[5]6)チェック
+                    if(num !== 0 && num!== 8 && p.tehai34[pai34-1] && p.tehai34[pai34+1]) {
+                        const show = [
+                            _.find(tehai, it => Math.floor(it/4) === pai34-1),
+                            _.find(tehai, it => Math.floor(it/4) === pai34+1)
+                        ];
+                        naki.push({type: "chi", pai: pai, show: show});
+                    }
+                    // 下チー([5]67)チェック
+                    if(num !== 7 && num!== 8 && p.tehai34[pai34+1] && p.tehai34[pai34+2]) {
+                        const show = [
+                            _.find(tehai, it => Math.floor(it/4) === pai34+1),
+                            _.find(tehai, it => Math.floor(it/4) === pai34+2)
+                        ];
+                        naki.push({type: "chi", pai: pai, show: show});
+                    }
+                }
+
+                // クライアントに鳴けることを通知
+                if(naki.length) {
+                    this.io.to(p.id).emit('naki',naki);
+                }
+            });
 
             this.current_dahai = pai;
             if(player.is_reach_try) {
