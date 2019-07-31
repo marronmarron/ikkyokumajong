@@ -48,7 +48,9 @@ class Player {
 let g_tehai = []
 let g_jikaze;
 
+let g_wareme;
 let g_yama;
+let g_num_tsumo;
 let g_dora;
 let g_turn;
 let g_players = []
@@ -56,9 +58,15 @@ let g_players = []
 //TODO 引数にdoraを入れる
 socket.on('haipai', (haipai, jikaze) => {
     console.log('haipai: haipai=' + haipai + ' jikaze=' + jikaze);
+    wareme = Math.floor(Math.random() * 68) * 2;
+    g_yama = Array(136);
+    g_yama.fill(true);
+    for (let i=0; i<52; ++i) {
+        g_yama[(wareme + i) % 136] = false;
+    }
     g_jikaze = jikaze;
     g_turn = -1;
-    g_yama = 84;
+    g_num_tsumo = 0;
     for (let i=0; i<4; ++i) {
         g_players[i] = new Player();
     }
@@ -70,7 +78,8 @@ socket.on('haipai', (haipai, jikaze) => {
 socket.on('tsumo', function (turn, tsumoPai) {
     console.log('tsumo: turn=' + turn + ' pai=' + tsumoPai);
     g_turn = turn;
-    --g_yama;
+    g_yama[(wareme + 52 + g_num_tsumo) % 136] = false;
+    ++g_num_tsumo;
     if (g_turn === g_jikaze) {
         g_tehai.push(tsumoPai);
     }
@@ -233,7 +242,83 @@ function drawKami() {
 }
 
 function drawYama() {
+    const mag_tate = 0.85;
+    const mag_yoko = 0.75
+    const ini_x = 30;
+    const ini_y = [50, 60];
+    for (let b = 1; b >=0; --b) {
+        let lx = ini_x;
+        let ly = ini_y[b];
+        for (let i=b; i<102; i+=2) {
+            let img = yama_img[0];
+            let mag = mag_tate
+            if (Math.floor(i / 34) % 2 === 1) {
+                img = yama_img[1];
+                mag = mag_yoko
+            }
+            if (g_yama[i]) ctx.drawImage(img, lx, ly, img.width * mag_tate, img.height * mag);
+            switch (Math.floor(i / 34) % 4) {
+                case 0: lx += yama_img[0].width * mag_tate; break;
+                case 1: ly += 28; break;
+                case 2: lx -= yama_img[0].width * mag_tate; break;
+            }
+        }
+        lx = ini_x;
+        ly = ini_y[b] + 28;
+        for (let i=133-b; i>=101; i-=2) {
+            let img = yama_img[1];
+            if (g_yama[i]) ctx.drawImage(img, lx, ly, img.width * mag_yoko, img.height * mag_yoko);
+            ly += 28;
+        }
+    } 
+}
 
+function drawtmp() {
+    const mag_tate = 0.85;
+    const mag_yoko = 0.73;
+    const pai_tate = 12;
+    const pai_yoko = 25;
+    const ini_x = 64;
+    const ini_y = [62, 62 + pai_tate];
+    for (let b=1; b>=0; --b) {//toimen
+        let lx = ini_x;
+        const wid = yama_img[0].width * mag_tate;
+        const hei = yama_img[0].height * mag_tate;
+        for (let i=b; i<34; i+=2) {
+            if (g_yama[i]) ctx.drawImage(yama_img[0], lx, ini_y[b], wid ,hei);
+            lx += wid;
+        }
+    }
+    for (let b=1; b>=0; --b) {//shimo
+        const lx = ini_x + yama_img[0].width * mag_tate * 17;
+        let ly = ini_y[b];
+        const wid = yama_img[1].width;
+        const hei = yama_img[1].height * mag_yoko;
+        for (let i=34+b; i<68; i+=2) {
+            if (g_yama[i]) ctx.drawImage(yama_img[1], lx, ly, wid ,hei);
+            ly += pai_yoko;
+        }
+    }
+    for (let b=1; b>=0; --b) {//kami
+        let lx = ini_x;
+        let ly = ini_y[b] - pai_tate + ura_img[0].height * mag_tate;
+        const wid = yama_img[1].width;
+        const hei = yama_img[1].height * mag_yoko;
+        for (let i=134+b; i>=102; i-=2) {
+            if (g_yama[i]) ctx.drawImage(yama_img[1], lx, ly, wid ,hei);
+            ly += pai_yoko;
+        }
+    }
+    for (let b=1; b>=0; --b) {//me
+        let lx = ini_x + yama_img[1].width;
+        const ly = ini_y[b] + 17 * pai_yoko;
+        const wid = yama_img[0].width * mag_tate;
+        const hei = yama_img[0].height * mag_tate;
+        for (let i=100+b; i>=68; i-=2) {
+            if (g_yama[i]) ctx.drawImage(yama_img[0], lx, ly, wid ,hei);
+            lx += wid;
+        }
+    }
 }
 
 function drawAll() {
@@ -243,7 +328,8 @@ function drawAll() {
     drawShimo();
     drawToimen();
     drawKami();
-    drawYama();
+    // drawYama();
+    drawtmp();
 }
 
 canvas.addEventListener('click', onClick, false);
