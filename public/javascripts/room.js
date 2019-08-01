@@ -55,16 +55,17 @@ let g_dora;
 let g_turn;
 let g_players = []
 
-//TODO 引数にdoraを入れる
-
 // socket.on('haipai', (haipai, jikaze) => {
 socket.on('haipai', (haipai, jikaze, dora, dice1, dice2) => {
     console.log('haipai: haipai=' + haipai + ' jikaze=' + jikaze);
-    wareme = Math.floor(Math.random() * 68) * 2;
+    g_dora = dora;
+    const oya = (jikaze + 2) % 4;
+    const dice = (4 - (dice1 + dice2 - 1) % 4) % 4;
+    g_wareme = 34 * ((oya + dice) % 4) + 2 * (dice1 + dice2);
     g_yama = Array(136);
     g_yama.fill(true);
     for (let i=0; i<52; ++i) {
-        g_yama[(wareme + i) % 136] = false;
+        g_yama[(g_wareme + i) % 136] = false;
     }
     g_jikaze = jikaze;
     g_turn = -1;
@@ -80,7 +81,7 @@ socket.on('haipai', (haipai, jikaze, dora, dice1, dice2) => {
 socket.on('tsumo', function (turn, tsumoPai) {
     console.log('tsumo: turn=' + turn + ' pai=' + tsumoPai);
     g_turn = turn;
-    g_yama[(wareme + 52 + g_num_tsumo) % 136] = false;
+    g_yama[(g_wareme + 52 + g_num_tsumo) % 136] = false;
     ++g_num_tsumo;
     if (g_turn === g_jikaze) {
         g_tehai.push(tsumoPai);
@@ -253,6 +254,7 @@ function drawKami() {
 }
 
 function drawYama() {
+    const oya = (g_jikaze + 2) % 4;
     const mag_tate = 0.85;
     const mag_yoko = 0.73;
     const pai_tate = 12;
@@ -264,7 +266,8 @@ function drawYama() {
         const wid = yama_img[0].width * mag_tate;
         const hei = yama_img[0].height * mag_tate;
         for (let i=b; i<34; i+=2) {
-            if (g_yama[i]) ctx.drawImage(yama_img[0], lx, ini_y[b], wid ,hei);
+            if ((i + 6) % 136 == g_wareme) ctx.drawImage(ho_img[2][Math.floor(g_dora/4)], lx, ini_y[b], wid, hei);
+            else if (g_yama[i]) ctx.drawImage(yama_img[0], lx, ini_y[b], wid ,hei);
             lx += wid;
         }
     }
@@ -274,7 +277,8 @@ function drawYama() {
         const wid = yama_img[1].width;
         const hei = yama_img[1].height * mag_yoko;
         for (let i=34+b; i<68; i+=2) {
-            if (g_yama[i]) ctx.drawImage(yama_img[1], lx, ly, wid ,hei);
+            if ((i + 6) % 136 == g_wareme) ctx.drawImage(ho_img[1][Math.floor(g_dora/4)], lx, ly, wid, hei);
+            else if (g_yama[i]) ctx.drawImage(yama_img[1], lx, ly, wid ,hei);
             ly += pai_yoko;
         }
     }
@@ -284,7 +288,8 @@ function drawYama() {
         const wid = yama_img[1].width;
         const hei = yama_img[1].height * mag_yoko;
         for (let i=134+b; i>=102; i-=2) {
-            if (g_yama[i]) ctx.drawImage(yama_img[1], lx, ly, wid ,hei);
+            if ((i + 6) % 136 == g_wareme) ctx.drawImage(ho_img[3][Math.floor(g_dora/4)], lx, ly, wid, hei);
+            else if (g_yama[i]) ctx.drawImage(yama_img[1], lx, ly, wid ,hei);
             ly += pai_yoko;
         }
     }
@@ -294,7 +299,8 @@ function drawYama() {
         const wid = yama_img[0].width * mag_tate;
         const hei = yama_img[0].height * mag_tate;
         for (let i=100+b; i>=68; i-=2) {
-            if (g_yama[i]) ctx.drawImage(yama_img[0], lx, ly, wid ,hei);
+            if ((i + 6) % 136 == g_wareme) ctx.drawImage(ho_img[0][Math.floor(g_dora/4)], lx, ly, wid, hei);
+            else if (g_yama[i]) ctx.drawImage(yama_img[0], lx, ly, wid ,hei);
             lx += wid;
         }
     }
