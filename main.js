@@ -8,6 +8,8 @@ class Player {
     kaze;
     tehai;
     tehai34;
+    naki_candidate;
+    naki_selected;
     is_reach_try = false;
     is_reach = false;
     current_tsumo;
@@ -27,6 +29,8 @@ class GameState {
     turn = 0;
     yama;
     current_dahai = -1;
+    current_naki_wait = [];
+    current_naki_selected = [];
 
     constructor(io, room) {
         this.io = io;
@@ -135,22 +139,93 @@ class GameState {
                 }
 
                 // クライアントに鳴けることを通知
-                if(naki.length) {
+                p.naki_candidate = naki;
+                if(naki) {
+                    this.current_naki_wait.push(p.kaze);
                     this.io.to(p.id).emit('naki',naki);
                 }
             });
 
+            // 打牌の更新
             this.current_dahai = pai;
+
+            // 鳴き待ちが発生したら抜けて、鳴き通知を待つ。
+            if(this.current_naki_wait) {
+                return;
+            }
+
+            // リーチ成立
             if(player.is_reach_try) {
                 player.is_reach = true;
             }
 
             // 次の番に移る
             this.turn = ++this.turn%4;
+            this.current_naki_wait = [];
+            _.forEach(this.player, p => p.naki_candidate = []);
             this.tsumo(this.turn);
         });
 
-        // アガリ時の処理
+        socket.on('naki', naki => {
+            const who = _.find(this.player, p => p.id === socket.id);
+            const from = this.player[this.turn];
+
+            // naki_candidate にないものを返してきたらエラー
+            if(!who.naki_candidate.includes(naki)) {
+                console.log("naki error : candidate=" + who.naki_candidate + " naki=" + naki);
+                return;
+            }
+
+            // 選択された鳴き方を記録
+            if(naki.type !== "pass") {
+                naki.who = who.kaze;
+                naki.from = this.turn;
+                who.naki_selected = naki;
+            }
+
+            this.current_naki_wait = this.current_naki_wait.filter(it => it !== who.kaze);
+            if(this.current_naki_wait) {
+                return;
+            }
+            _.forEach(this.player, p => {
+                if(p.naki_selected) {
+                    this.current_naki_selected.push(p.naki_selected);
+                }
+            });
+            const ron = this.current_naki_selected.filter(it => it.type === "ron");
+            const kan = this.current_naki_selected.filter(it => it.type === "kan");
+            const pon = this.current_naki_selected.filter(it => it.type === "pon");
+            const chi = this.current_naki_selected.filter(it => it.type === "chi");
+
+            if(ron) {
+                _.forEach(ron, r => {
+                    this.io.in(this.room).emit('ron', {
+                        who: r.who.kaze,
+                        from: this.turn,
+                        pai: this.current_dahai,
+                        tehai: this.player[r.who].tehai,
+                    });
+                });
+                return;
+            }
+
+            if(kan) {
+                this.io.in(this.room).emit('naki_notice', kan[0]);
+                return;
+            }
+
+            if(pon) {
+                this.io.in(this.room).emit('naki_notice', pon[0]);
+                return;
+            }
+
+            if(chi) {
+                this.io.in(this.room).emit('naki_notice', chi[0]);
+                return;
+            }
+        });
+
+        // アガリ時の処理(古い)
         socket.on('agari', () => {
             // アガリ情報を変数化
             const who = _.find(this.player, p => p.id === socket.id);
