@@ -258,6 +258,9 @@ class GameState {
 
     // 配牌
     haipai() {
+        const dora = this.yama[0];
+        const dice1 = 1 + Math.floor(Math.random()*6);
+        const dice2 = 1 + Math.floor(Math.random()*6);
         _.forEach(this.player, p => {
             const tehai = [];
             _.times(13, () => tehai.push(this.yama.pop()));
@@ -265,10 +268,6 @@ class GameState {
             p.tehai = [8,12,16,18,19,20,24,129,130,131,133,134,135];
             p.tehai34 = Array(34).fill(0);
             _.forEach(p.tehai, pai => p.tehai34[Math.floor(pai/4)]++);
-
-            const dora = this.yama[0];
-            const dice1 = 1 + Math.floor(Math.random()*6);
-            const dice2 = 1 + Math.floor(Math.random()*6);
             this.io.to(p.id).emit('haipai', p.tehai, p.kaze, dora, dice1, dice2);
         });
     }
