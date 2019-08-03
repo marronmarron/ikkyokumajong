@@ -10,6 +10,8 @@ class Player {
     tehai34;
     naki_candidate;
     naki_selected;
+    fuuro = [];
+    is_menzen = true;
     is_reach_try = false;
     is_reach = false;
     current_tsumo;
@@ -19,6 +21,33 @@ class Player {
         this.id = socket.id;
         this.room = room;
         this.kaze = kaze;
+    }
+
+    tehaiAdd(pai) {
+        if(tehai.includes(pai)) {
+            console.log("tehaiAdd error : tehai=" + this.tehai + " pai=" + pai);
+        }
+        this.tehai.push(pai);
+        this.tehai.sort();
+
+        const pai34 = Math.floor(pai/4);
+        if(this.tehai34[pai34] >= 4) {
+            console.log("tehaiAdd error : tehai34=" + this.tehai34 + " pai=" + pai);
+        }
+        this.tehai34[pai34]++;
+    }
+
+    tehaiRemove(pai) {
+        if(!tehai.includes(pai)) {
+            console.log("tehaiRemove error : tehai=" + this.tehai + " pai=" + pai);
+        }
+        this.tehai = this.tehai.filter(it => it !== pai);
+
+        const pai34 = Math.floor(pai/4);
+        if(this.tehai34[pai34] <= 0) {
+            console.log("tehaiRemove error : tehai34=" + this.tehai34 + " pai=" + pai);
+        }
+        this.tehai34[pai34]--;
     }
 }
 
@@ -71,8 +100,7 @@ class GameState {
                 return;
             }
             // 手牌から切られた牌を除く
-            player.tehai = player.tehai.filter(it => it !== pai);
-            player.tehai34[pai34]--;
+            player.tehaiRemove(pai);
 
             // リーチをかけたがテンパイしない打牌を弾く
             if(player.is_reach_try && getShanten(player.tehai) !== 0) {
@@ -91,11 +119,9 @@ class GameState {
                 const naki = [];
 
                 // ロンチェック
-                p.tehai.push(pai);
-                if(getShanten(p.tehai) === -1) {
+                if(getShanten(p.tehai.concat(pai)) === -1) {
                     naki.push({type: "ron", pai: pai})
                 }
-                p.tehai = p.tehai.filter(it => it !== pai);
 
                 // カンチェック
                 if(p.tehai34[pai34] === 3) {
@@ -155,15 +181,7 @@ class GameState {
                 return;
             }
 
-            // リーチ成立
-            if(player.is_reach_try) {
-                player.is_reach = true;
-            }
-
-            // 次の番に移る
-            this.turn = ++this.turn%4;
-            this.current_naki_wait = [];
-            _.forEach(this.player, p => p.naki_candidate = []);
+            this.turnUpdate((this.turn+1)%4);
             this.tsumo(this.turn);
         });
 
@@ -187,9 +205,11 @@ class GameState {
 
             this.current_naki_wait = this.current_naki_wait.filter(it => it !== who.kaze);
             if(this.current_naki_wait.length) {
-                console.log("current naki wait = " + this.current_naki_wait);
+                console.log("current naki wait = player" + this.current_naki_wait);
                 return;
             }
+
+            determine
             _.forEach(this.player, p => {
                 if(p.naki_selected) {
                     this.current_naki_selected.push(p.naki_selected);
@@ -208,7 +228,7 @@ class GameState {
                         who: r.who.kaze,
                         from: this.turn,
                         pai: this.current_dahai,
-                        tehai: this.player[r.who].tehai,
+                        tehai: this.player[r.who].tehai.concat(this.cu),
                     });
                 });
                 return;
@@ -216,6 +236,7 @@ class GameState {
 
             if(kan) {
                 this.io.in(this.room).emit('naki', kan[0]);
+
                 return;
             }
 
@@ -228,6 +249,8 @@ class GameState {
                 this.io.in(this.room).emit('naki', chi[0]);
                 return;
             }
+
+
         });
 
         // アガリ時の処理(古い)
@@ -302,6 +325,19 @@ class GameState {
         this.player = this.player.filter(p => p.id !== id);
     }
 
+    turnUpdate(nextTurn) {
+        // リーチ成立
+        if(this.player[this.turn].is_reach_try) {
+            this.player[this.turn].is_reach = true;
+        }
+
+        // 次の番に移る
+        this.turn = nextTurn;
+        this.current_naki_wait = [];
+        this.current_naki_selected = [];
+        _.forEach(this.player, p => p.naki_candidate = []);
+        _.forEach(this.player, p => p.naki_selected = []);
+    }
     // ツモ時の処理
     tsumo(turn) {
         const player = this.player[this.turn];
@@ -314,9 +350,11 @@ class GameState {
         const shanten = getShanten(this.player[turn].tehai);
         console.log('tsumo : player=' + turn + ' pai=' + pai + ' shanten=' + shanten);
 
+        const ankanCandidate = [];// todo
+
         // クライアントに通知(番の人にだけパラメータ送信)
         _.forEach(this.player, p => {
-            this.io.to(p.id).emit('tsumo', turn !== p.kaze ? { who: this.turn } : {
+            this.io.to(p.id).emit('tsumo', turn !== p.kaze ? { who: this.turn, is_rinshan: false } : {
                 who: this.turn,
                 pai: pai,
                 can_reach: shanten <= 0 && p.is_reach,
@@ -324,6 +362,7 @@ class GameState {
                 can_kakan: [],
                 can_hora: shanten === -1,
                 can_kyushu: false,
+                is_rinshan: false,
             });
         });
     }
