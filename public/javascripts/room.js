@@ -3,14 +3,18 @@ const socket = io();
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 
-const x_ron = 580;
-const y_ron = 550;
 
 const w_popup = 40;
 const h_popup = 20;
 
+const x_ron = 580;
+const y_ron = 550;
+
 const x_pass = x_ron + w_popup + 10;
 const y_pass = y_ron;
+
+const x_reach = x_pass;
+const y_reach = y_pass - h_popup - 10;
 
 const popup_back_color = "rgb(200, 200, 200)";
 const popup_text_color = "rgb(0, 0, 0)";
@@ -67,6 +71,8 @@ let g_dora;
 let g_turn;
 let g_players = []
 
+const eventListenerMap = new Map();
+
 // socket.on('haipai', (haipai, jikaze) => {
 socket.on('haipai', (haipai, jikaze, dora, dice1, dice2) => {
     console.log('haipai: haipai=' + haipai + ' jikaze=' + jikaze);
@@ -105,7 +111,20 @@ socket.on('tsumo', function (turn, tsumoPai) {
 socket.on('can_reach', () => {
     console.log("can reach");
     //todo リーチするかしないかきく
-    socket.emit('reach');
+    ctx.fillStyle = popup_back_color;
+    ctx.fillRect(x_reach, y_reach, w_popup, h_popup);
+    ctx.fillStyle = popup_text_color;
+    ctx.fillText("リーチ", x_reach, y_reach);
+    canvas.addEventListener('click', function(e) {
+        console.log('リーチした');
+        const rect = e.target.getBoundingClientRect();
+        const x	= e.clientX - Math.floor(rect.left);
+        const y	= e.clientY - Math.floor(rect.top);
+        if (x >= x_reach && x <= x_reach + w_popup && y >= y_reach && y <= y_reach + h_popup) {
+            socket.emit('reach');
+            canvas.removeEventListener('click', arguments.callee);
+        }
+    });
 });
 
 socket.on('reach', (player) => {
@@ -124,7 +143,6 @@ socket.on('dahai', (turn, pai) => {
 
 socket.on('naki',(naki) => {
     console.log(naki);
-    buttons = [];
     ctx.fillStyle = popup_back_color;
     ctx.fillRect(x_pass, y_pass, w_popup, h_popup);
     ctx.fillStyle = popup_text_color;
@@ -143,14 +161,14 @@ socket.on('naki',(naki) => {
         const rect = e.target.getBoundingClientRect();
         const x	= e.clientX - Math.floor(rect.left);
         const y	= e.clientY - Math.floor(rect.top);
-        if (x >= x_pass && x <= x_pass + w_popup && y >= y_pass && y <= h_popup) {
-            socket.exit(-1);
+        if (x >= x_pass && x <= x_pass + w_popup && y >= y_pass && y <= y_pass + h_popup) {
+            socket.emit(-1);
             return true;
         }
         for (let i=0; i<naki.length; ++i) {
             if (naki[i].type === 'ron') {
-                if (x >= x_ron && x <= x_ron + w_popup && y >= y_ron && y <= h_popup) {
-                    socket.exit(i);
+                if (x >= x_ron && x <= x_ron + w_popup && y >= y_ron && y <= y_ron + h_popup) {
+                    socket.emit(i);
                     return true;
                 }
                 continue;
@@ -159,8 +177,8 @@ socket.on('naki',(naki) => {
             const ind = g_tehai.indexOf(naki[i].show[tmp.get(naki[i].type)]);
             const le_x = left + tehai_img[0].width;
             const le_y = canvas.height - tehai_img[0].height;
-            if (x >= le_x && x <= le_x + tehai_img[0].width && y >= le_y && y <= canvas.height) {
-                socket.exit(i);
+            if (x >= le_x && x <= le_x + tehai_img[0].width && y >= le_y && y <= le_y + tehai_img[0].height) {
+                socket.emit(i);
                 return true;
             }
         }
