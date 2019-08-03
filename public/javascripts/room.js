@@ -15,8 +15,6 @@ const y_pass = y_ron;
 const popup_back_color = "rgb(200, 200, 200)";
 const popup_text_color = "rgb(0, 0, 0)";
 
-ctx.fillStyle = popup_back_color;
-ctx.fillRect(x_pass, y_pass, w_popup, h_popup);
 
 function load_imgs(dir) {
     let imgs = [];
@@ -142,7 +140,6 @@ socket.on('naki',(naki) => {
         }
     });
     createOneTimeListener(canvas, 'click', (e) => {
-        console.log("nakilister");
         const rect = e.target.getBoundingClientRect();
         const x	= e.clientX - Math.floor(rect.left);
         const y	= e.clientY - Math.floor(rect.top);
