@@ -132,6 +132,18 @@ socket.on('reach', (player) => {
     console.log("reach : player=" + player);
 });
 
+socket.on('ron', ron => {
+    // TODO 誰かがロンした通知の処理
+    console.log("ron!");
+    console.log(ron);
+});
+
+socket.on('naki_notice', naki => {
+    // TODO 誰かがロンした通知の処理
+    console.log("naki!");
+    console.log(naki);
+});
+
 
 //turn === g_jikaze になることもある
 socket.on('dahai', (turn, pai) => {
@@ -162,23 +174,26 @@ socket.on('naki',(naki) => {
         const x	= e.clientX - Math.floor(rect.left);
         const y	= e.clientY - Math.floor(rect.top);
         if (x >= x_pass && x <= x_pass + w_popup && y >= y_pass && y <= y_pass + h_popup) {
-            socket.emit(-1);
+            console.log("pass clicked");
+            socket.emit('naki', {type: "pass"});
             return true;
         }
         for (let i=0; i<naki.length; ++i) {
             if (naki[i].type === 'ron') {
                 if (x >= x_ron && x <= x_ron + w_popup && y >= y_ron && y <= y_ron + h_popup) {
-                    socket.emit(i);
+                    console.log("ron clicked");
+                    socket.emit('naki', naki[i]);
                     return true;
                 }
                 continue;
             }
             const tmp = new Map([['chi', 0], ['pon', 1], ['kan', 2]]);
             const ind = g_tehai.indexOf(naki[i].show[tmp.get(naki[i].type)]);
-            const le_x = left + tehai_img[0].width;
+            const le_x = left + tehai_img[0].width * ind;
             const le_y = canvas.height - tehai_img[0].height;
             if (x >= le_x && x <= le_x + tehai_img[0].width && y >= le_y && y <= le_y + tehai_img[0].height) {
-                socket.emit(i);
+                console.log("naki clicked");
+                socket.emit('naki', naki[i]);
                 return true;
             }
         }

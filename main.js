@@ -151,6 +151,7 @@ class GameState {
 
             // 鳴き待ちが発生したら抜けて、鳴き通知を待つ。
             if(this.current_naki_wait) {
+                console.log("naki waiting");
                 return;
             }
 
@@ -167,14 +168,15 @@ class GameState {
         });
 
         socket.on('naki', naki => {
+            console.log(naki);
             const who = _.find(this.player, p => p.id === socket.id);
             const from = this.player[this.turn];
 
-            // naki_candidate にないものを返してきたらエラー
-            if(!who.naki_candidate.includes(naki)) {
-                console.log("naki error : candidate=" + who.naki_candidate + " naki=" + naki);
-                return;
-            }
+            // todo naki_candidate にないものを返してきたらエラー
+            // if(!who.naki_candidate.toString(JSON.stringify(naki).toString()) {
+            //     console.log("naki error : candidate=" + who.naki_candidate + " naki=" + naki);
+            //     return;
+            // }
 
             // 選択された鳴き方を記録
             if(naki.type !== "pass") {
@@ -184,7 +186,8 @@ class GameState {
             }
 
             this.current_naki_wait = this.current_naki_wait.filter(it => it !== who.kaze);
-            if(this.current_naki_wait) {
+            if(this.current_naki_wait.length) {
+                console.log("current naki wait = " + this.current_naki_wait);
                 return;
             }
             _.forEach(this.player, p => {
@@ -192,12 +195,14 @@ class GameState {
                     this.current_naki_selected.push(p.naki_selected);
                 }
             });
+            console.log(this.current_naki_selected);
             const ron = this.current_naki_selected.filter(it => it.type === "ron");
             const kan = this.current_naki_selected.filter(it => it.type === "kan");
             const pon = this.current_naki_selected.filter(it => it.type === "pon");
             const chi = this.current_naki_selected.filter(it => it.type === "chi");
 
             if(ron) {
+                console.log(ron);
                 _.forEach(ron, r => {
                     this.io.in(this.room).emit('ron', {
                         who: r.who.kaze,
