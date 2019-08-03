@@ -95,13 +95,13 @@ socket.on('haipai', (haipai, jikaze, dora, dice1, dice2) => {
     drawAll();
 });
 
-socket.on('tsumo', function (turn, tsumoPai) {
-    console.log('tsumo: turn=' + turn + ' pai=' + tsumoPai);
-    g_turn = turn;
+socket.on('tsumo', function (tsumo) {
+    console.log(tsumo);
+    g_turn = tsumo.who;
     g_yama[(g_wareme + 52 + g_num_tsumo) % 136] = false;
     ++g_num_tsumo;
     if (g_turn === g_jikaze) {
-        g_tehai.push(tsumoPai);
+        g_tehai.push(tsumo.pai);
         createOneTimeListener(canvas, 'click', onClickDahai);
     }
     drawAll();
@@ -148,6 +148,10 @@ socket.on('naki', naki => {
 socket.on('dahai', (turn, pai) => {
     console.log('dahai: turn=' + turn +' pai=' + pai);
     g_players[turn].ho.push(pai);
+    if (g_turn === turn) {
+        g_tehai.splice(g_tehai.indexOf(pai), 1);
+        g_tehai.sort((a, b) => a - b);
+    }
     g_turn = -1;
     drawAll();
 });
@@ -200,18 +204,6 @@ socket.on('naki_select',(naki) => {
     });
 });
 
-function self_dahai(te_num) {
-    console.log("self_dahai" + te_num);
-    const da_pai = g_tehai[te_num];
-    socket.emit('dahai', da_pai);
-    g_tehai[te_num] = g_tehai[13];
-    g_tehai.pop();
-    g_tehai.sort((a, b) => a - b);
-    // g_players[g_jikaze].ho.push(da_pai);
-    // g_turn = -1;
-    // drawAll();
-}
-
 document.getElementById('restart-button').addEventListener("click", ()=>{
     console.log("restart");
     socket.emit('restart');
@@ -224,12 +216,13 @@ function onClickDahai(e) {
     if (x < left || y > canvas.height || y < canvas.height - tehai_img[0].height) return false;
     for (let i=0; i<13; ++i) {
         if (x < left + (i+1) * tehai_img[0].width) {
-            self_dahai(i);
+            socket.emit(g_tehai[i]);
             return true;
         }
     }
     if (x >= tsumo_left && x < tsumo_left + tehai_img[0].width) {
-        self_dahai(13);
+        console.log(g_tehai[13]);
+        socket.emit(g_tehai[13]);
         return true;
     }
 }
