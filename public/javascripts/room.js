@@ -3,6 +3,17 @@ const socket = io();
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 
+const x_ron = 90;
+const y_ron = 400;
+
+const w_popup = 50;
+const y_popup = 20;
+
+const x_pass = x_ron + w_popup + 10;
+const y_pass = y_ron;
+
+const popup_back_color = "rgb(200, 200, 200)";
+const popup_text_color = "rgb(0, 0, 0)";
 
 function load_imgs(dir) {
     let imgs = [];
@@ -112,8 +123,29 @@ socket.on('dahai', (turn, pai) => {
 
 socket.on('naki',(naki) => {
     console.log(naki);
-    const naki_pai = naki[0].pai;
-    console.log('naki: pai=' + naki[0].pai);
+    ctx.fillStype(popup_back_color);
+    ctx.fillRect(x_pass, y_pass, w_popup, h_popup);
+    ctx.fillStyle(popup_text_color);
+    ctx.fillText("パス", x_pass, y_pass);
+    naki.forEach(na => {
+        switch (na.type) {
+            case "ron":
+                ctx.fillStyle(popup_back_color);
+                ctx.fillRect(x_ron, y_ron, w_popup, h_popup);
+                ctx.fillStyle(popup_text_color);
+                ctx.fillText("ロン", x_ron, y_ron);
+                break;
+            case "chi":
+                drawNakiPrompt("チー", na[2][0], na[2][1]);
+                break;
+            case "pon":
+                drawNakiPrompt("ポン", na[2][1], na[2][0]);
+                break;
+            case "kan":
+                drawNakiPrompt("カン", na[2][2], na[2][1], na[2][0]);
+                break;
+        }
+    });
     
 });
 
@@ -138,15 +170,16 @@ function onClickDahai(e) {
     var rect	= e.target.getBoundingClientRect();
     const x	= e.clientX - Math.floor(rect.left);
     const y	= e.clientY - Math.floor(rect.top);
-    if (x < left || y > canvas.height || y < canvas.height - tehai_img[0].height) return;
+    if (x < left || y > canvas.height || y < canvas.height - tehai_img[0].height) return false;
     for (let i=0; i<13; ++i) {
         if (x < left + (i+1) * tehai_img[0].width) {
             self_dahai(i);
-            return;
+            return true;
         }
     }
     if (x >= tsumo_left && x < tsumo_left + tehai_img[0].width) {
         self_dahai(13);
+        return true;
     }
 }
 
@@ -316,10 +349,16 @@ function drawAll() {
     drawYama();
 }
 
+function drawNakiPrompt(naki_type, ...nakeru_pai) {
+    
+}
+
 
 function createOneTimeListener(element, event, listener) {
 	element.addEventListener(event, function(e) {
-		element.removeEventListener(event, arguments.callee);
-		return listener(e);
+        console.log("kaihenkaihen");
+        if (listener(e)) {
+            element.removeEventListener(event, arguments.callee);
+        }
 	});
 }
