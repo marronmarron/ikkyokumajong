@@ -148,7 +148,7 @@ socket.on('naki', naki => {
 socket.on('dahai', (turn, pai) => {
     console.log('dahai: turn=' + turn +' pai=' + pai);
     g_players[turn].ho.push(pai);
-    if (g_turn === turn) {
+    if (g_jikaze === turn) {
         g_tehai.splice(g_tehai.indexOf(pai), 1);
         g_tehai.sort((a, b) => a - b);
     }
@@ -216,13 +216,13 @@ function onClickDahai(e) {
     if (x < left || y > canvas.height || y < canvas.height - tehai_img[0].height) return false;
     for (let i=0; i<13; ++i) {
         if (x < left + (i+1) * tehai_img[0].width) {
-            socket.emit(g_tehai[i]);
+            socket.emit('dahai', g_tehai[i]);
             return true;
         }
     }
     if (x >= tsumo_left && x < tsumo_left + tehai_img[0].width) {
         console.log(g_tehai[13]);
-        socket.emit(g_tehai[13]);
+        socket.emit('dahai', g_tehai[13]);
         return true;
     }
 }
