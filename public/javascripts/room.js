@@ -4,6 +4,22 @@ const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 
 
+const w_popup = 40;
+const h_popup = 20;
+
+const x_ron = 580;
+const y_ron = 550;
+
+const x_pass = x_ron + w_popup + 10;
+const y_pass = y_ron;
+
+const x_reach = x_pass;
+const y_reach = y_pass - h_popup - 10;
+
+const popup_back_color = "rgb(200, 200, 200)";
+const popup_text_color = "rgb(0, 0, 0)";
+
+
 function load_imgs(dir) {
     let imgs = [];
     for (let i=0; i<34; ++i) {
@@ -55,6 +71,8 @@ let g_dora;
 let g_turn;
 let g_players = []
 
+const eventListenerMap = new Map();
+
 // socket.on('haipai', (haipai, jikaze) => {
 socket.on('haipai', (haipai, jikaze, dora, dice1, dice2) => {
     console.log('haipai: haipai=' + haipai + ' jikaze=' + jikaze);
@@ -93,7 +111,20 @@ socket.on('tsumo', function (turn, tsumoPai) {
 socket.on('can_reach', () => {
     console.log("can reach");
     //todo リーチするかしないかきく
-    socket.emit('reach');
+    ctx.fillStyle = popup_back_color;
+    ctx.fillRect(x_reach, y_reach, w_popup, h_popup);
+    ctx.fillStyle = popup_text_color;
+    ctx.fillText("リーチ", x_reach, y_reach);
+    canvas.addEventListener('click', function(e) {
+        console.log('リーチした');
+        const rect = e.target.getBoundingClientRect();
+        const x	= e.clientX - Math.floor(rect.left);
+        const y	= e.clientY - Math.floor(rect.top);
+        if (x >= x_reach && x <= x_reach + w_popup && y >= y_reach && y <= y_reach + h_popup) {
+            socket.emit('reach');
+            canvas.removeEventListener('click', arguments.callee);
+        }
+    });
 });
 
 socket.on('reach', (player) => {
@@ -112,9 +143,47 @@ socket.on('dahai', (turn, pai) => {
 
 socket.on('naki',(naki) => {
     console.log(naki);
-    const naki_pai = naki[0].pai;
-    console.log('naki: pai=' + naki[0].pai);
-    
+    ctx.fillStyle = popup_back_color;
+    ctx.fillRect(x_pass, y_pass, w_popup, h_popup);
+    ctx.fillStyle = popup_text_color;
+    ctx.fillText("パス", x_pass, y_pass);
+    naki.forEach(na => {
+        switch (na.type) {
+            case "ron":
+                ctx.fillStyle = popup_back_color;
+                ctx.fillRect(x_ron, y_ron, w_popup, h_popup);
+                ctx.fillStyle = popup_text_color;
+                ctx.fillText("ロン", x_ron, y_ron);
+                break;
+        }
+    });
+    createOneTimeListener(canvas, 'click', (e) => {
+        const rect = e.target.getBoundingClientRect();
+        const x	= e.clientX - Math.floor(rect.left);
+        const y	= e.clientY - Math.floor(rect.top);
+        if (x >= x_pass && x <= x_pass + w_popup && y >= y_pass && y <= y_pass + h_popup) {
+            socket.emit(-1);
+            return true;
+        }
+        for (let i=0; i<naki.length; ++i) {
+            if (naki[i].type === 'ron') {
+                if (x >= x_ron && x <= x_ron + w_popup && y >= y_ron && y <= y_ron + h_popup) {
+                    socket.emit(i);
+                    return true;
+                }
+                continue;
+            }
+            const tmp = new Map([['chi', 0], ['pon', 1], ['kan', 2]]);
+            const ind = g_tehai.indexOf(naki[i].show[tmp.get(naki[i].type)]);
+            const le_x = left + tehai_img[0].width;
+            const le_y = canvas.height - tehai_img[0].height;
+            if (x >= le_x && x <= le_x + tehai_img[0].width && y >= le_y && y <= le_y + tehai_img[0].height) {
+                socket.emit(i);
+                return true;
+            }
+        }
+        return false;
+    });
 });
 
 function self_dahai(te_num) {
@@ -135,18 +204,19 @@ document.getElementById('restart-button').addEventListener("click", ()=>{
 });
 
 function onClickDahai(e) {
-    var rect	= e.target.getBoundingClientRect();
+    var rect = e.target.getBoundingClientRect();
     const x	= e.clientX - Math.floor(rect.left);
     const y	= e.clientY - Math.floor(rect.top);
-    if (x < left || y > canvas.height || y < canvas.height - tehai_img[0].height) return;
+    if (x < left || y > canvas.height || y < canvas.height - tehai_img[0].height) return false;
     for (let i=0; i<13; ++i) {
         if (x < left + (i+1) * tehai_img[0].width) {
             self_dahai(i);
-            return;
+            return true;
         }
     }
     if (x >= tsumo_left && x < tsumo_left + tehai_img[0].width) {
         self_dahai(13);
+        return true;
     }
 }
 
@@ -316,10 +386,15 @@ function drawAll() {
     drawYama();
 }
 
+function drawNakiPrompt(naki_type, ...nakeru_pai) {
+    
+}
+
 
 function createOneTimeListener(element, event, listener) {
 	element.addEventListener(event, function(e) {
-		element.removeEventListener(event, arguments.callee);
-		return listener(e);
+        if (listener(e)) {
+            element.removeEventListener(event, arguments.callee);
+        }
 	});
 }
