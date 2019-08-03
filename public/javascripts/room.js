@@ -3,17 +3,20 @@ const socket = io();
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 
-const x_ron = 90;
-const y_ron = 400;
+const x_ron = 580;
+const y_ron = 550;
 
-const w_popup = 50;
-const y_popup = 20;
+const w_popup = 40;
+const h_popup = 20;
 
 const x_pass = x_ron + w_popup + 10;
 const y_pass = y_ron;
 
 const popup_back_color = "rgb(200, 200, 200)";
 const popup_text_color = "rgb(0, 0, 0)";
+
+ctx.fillStyle = popup_back_color;
+ctx.fillRect(x_pass, y_pass, w_popup, h_popup);
 
 function load_imgs(dir) {
     let imgs = [];
@@ -123,30 +126,49 @@ socket.on('dahai', (turn, pai) => {
 
 socket.on('naki',(naki) => {
     console.log(naki);
-    ctx.fillStype(popup_back_color);
+    buttons = [];
+    ctx.fillStyle = popup_back_color;
     ctx.fillRect(x_pass, y_pass, w_popup, h_popup);
-    ctx.fillStyle(popup_text_color);
+    ctx.fillStyle = popup_text_color;
     ctx.fillText("パス", x_pass, y_pass);
     naki.forEach(na => {
         switch (na.type) {
             case "ron":
-                ctx.fillStyle(popup_back_color);
+                ctx.fillStyle = popup_back_color;
                 ctx.fillRect(x_ron, y_ron, w_popup, h_popup);
-                ctx.fillStyle(popup_text_color);
+                ctx.fillStyle = popup_text_color;
                 ctx.fillText("ロン", x_ron, y_ron);
-                break;
-            case "chi":
-                drawNakiPrompt("チー", na[2][0], na[2][1]);
-                break;
-            case "pon":
-                drawNakiPrompt("ポン", na[2][1], na[2][0]);
-                break;
-            case "kan":
-                drawNakiPrompt("カン", na[2][2], na[2][1], na[2][0]);
                 break;
         }
     });
-    
+    createOneTimeListener(canvas, 'click', (e) => {
+        console.log("nakilister");
+        const rect = e.target.getBoundingClientRect();
+        const x	= e.clientX - Math.floor(rect.left);
+        const y	= e.clientY - Math.floor(rect.top);
+        if (x >= x_pass && x <= x_pass + w_popup && y >= y_pass && y <= h_popup) {
+            socket.exit(-1);
+            return true;
+        }
+        for (let i=0; i<naki.length; ++i) {
+            if (naki[i].type === 'ron') {
+                if (x >= x_ron && x <= x_ron + w_popup && y >= y_ron && y <= h_popup) {
+                    socket.exit(i);
+                    return true;
+                }
+                continue;
+            }
+            const tmp = new Map([['chi', 0], ['pon', 1], ['kan', 2]]);
+            const ind = g_tehai.indexOf(naki[i].show[tmp.get(naki[i].type)]);
+            const le_x = left + tehai_img[0].width;
+            const le_y = canvas.height - tehai_img[0].height;
+            if (x >= le_x && x <= le_x + tehai_img[0].width && y >= le_y && y <= canvas.height) {
+                socket.exit(i);
+                return true;
+            }
+        }
+        return false;
+    });
 });
 
 function self_dahai(te_num) {
@@ -167,7 +189,7 @@ document.getElementById('restart-button').addEventListener("click", ()=>{
 });
 
 function onClickDahai(e) {
-    var rect	= e.target.getBoundingClientRect();
+    var rect = e.target.getBoundingClientRect();
     const x	= e.clientX - Math.floor(rect.left);
     const y	= e.clientY - Math.floor(rect.top);
     if (x < left || y > canvas.height || y < canvas.height - tehai_img[0].height) return false;
@@ -356,7 +378,6 @@ function drawNakiPrompt(naki_type, ...nakeru_pai) {
 
 function createOneTimeListener(element, event, listener) {
 	element.addEventListener(event, function(e) {
-        console.log("kaihenkaihen");
         if (listener(e)) {
             element.removeEventListener(event, arguments.callee);
         }
