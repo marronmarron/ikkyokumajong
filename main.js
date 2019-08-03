@@ -142,7 +142,7 @@ class GameState {
                 p.naki_candidate = naki;
                 if(naki) {
                     this.current_naki_wait.push(p.kaze);
-                    this.io.to(p.id).emit('naki',naki);
+                    this.io.to(p.id).emit('naki_select',naki);
                 }
             });
 
@@ -215,17 +215,17 @@ class GameState {
             }
 
             if(kan) {
-                this.io.in(this.room).emit('naki_notice', kan[0]);
+                this.io.in(this.room).emit('naki', kan[0]);
                 return;
             }
 
             if(pon) {
-                this.io.in(this.room).emit('naki_notice', pon[0]);
+                this.io.in(this.room).emit('naki', pon[0]);
                 return;
             }
 
             if(chi) {
-                this.io.in(this.room).emit('naki_notice', chi[0]);
+                this.io.in(this.room).emit('naki', chi[0]);
                 return;
             }
         });
@@ -314,19 +314,18 @@ class GameState {
         const shanten = getShanten(this.player[turn].tehai);
         console.log('tsumo : player=' + turn + ' pai=' + pai + ' shanten=' + shanten);
 
-        // クライアントに通知(番の人にだけ牌とシャンテン情報を送信)
+        // クライアントに通知(番の人にだけパラメータ送信)
         _.forEach(this.player, p => {
-            this.io.to(p.id).emit('tsumo',
-                turn,
-                turn === p.kaze ? pai : -1,
-                turn === p.kaze ? (shanten > 0 ? 1 : shanten) : 6
-            );
+            this.io.to(p.id).emit('tsumo', turn !== p.kaze ? { who: this.turn } : {
+                who: this.turn,
+                pai: pai,
+                can_reach: shanten <= 0 && p.is_reach,
+                can_ankan: [],
+                can_kakan: [],
+                can_hora: shanten === -1,
+                can_kyushu: false,
+            });
         });
-
-        // リーチ可能なら通知
-        if(shanten <= 0) {
-            this.io.to(player.id).emit('can_reach');
-        }
     }
 
     gameStart() {

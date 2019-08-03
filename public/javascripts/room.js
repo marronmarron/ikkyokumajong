@@ -3,7 +3,6 @@ const socket = io();
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 
-
 const w_popup = 40;
 const h_popup = 20;
 
@@ -138,7 +137,7 @@ socket.on('ron', ron => {
     console.log(ron);
 });
 
-socket.on('naki_notice', naki => {
+socket.on('naki', naki => {
     // TODO 誰かがロンした通知の処理
     console.log("naki!");
     console.log(naki);
@@ -153,7 +152,7 @@ socket.on('dahai', (turn, pai) => {
     drawAll();
 });
 
-socket.on('naki',(naki) => {
+socket.on('naki_select',(naki) => {
     console.log(naki);
     ctx.fillStyle = popup_back_color;
     ctx.fillRect(x_pass, y_pass, w_popup, h_popup);
