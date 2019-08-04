@@ -223,7 +223,7 @@ class GameState {
             this.tsumo(false);
         });
 
-        socket.on('naki', async naki_selected => {
+        socket.on('naki', naki_selected => {
             console.log(naki_selected);
             const who = _.find(this.player, p => p.id === socket.id);
 
@@ -258,7 +258,7 @@ class GameState {
                 }
             });
 
-            await this.nakiExecute(this.current_naki_selected);
+            this.nakiExecute(this.current_naki_selected);
         });
 
         socket.on('kakan', pai => {
@@ -333,7 +333,7 @@ class GameState {
         });
     }
 
-    async nakiExecute(naki_candidate) {
+    nakiExecute(naki_candidate) {
         const ron = naki_candidate.filter(it => it.type === "ron");
         const kan = naki_candidate.filter(it => it.type === "kan");
         const pon = naki_candidate.filter(it => it.type === "pon");
@@ -376,11 +376,11 @@ class GameState {
             return;
         }
 
-        await this.turnUpdate((this.turn+1)%4);
+        this.turnUpdate((this.turn+1)%4);
         this.tsumo(false);
     }
 
-    async turnUpdate(nextTurn) {
+    turnUpdate(nextTurn) {
         // リーチ成立
         if(this.player[this.turn].is_reach_try) {
             this.player[this.turn].is_reach_try = false;
@@ -483,7 +483,7 @@ let current_room_id = 0;
 // サーバー側処理のエントリポイント
 module.exports = io => {
     currentGameState = new GameState(io, 'room_' + current_room_id);
-    io.on('connection', async socket => {
+    io.on('connection', socket => {
         currentGameState.addPlayer(socket);
         socket.on('disconnect', () => {
             currentGameState.removePlayerById(socket.id);
