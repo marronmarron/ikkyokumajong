@@ -250,8 +250,12 @@ class GameState {
                     this.current_naki_selected.push(p.naki_selected);
                 }
             });
-            this.current_naki_selected.forEach(it => it.show = it.show.concat(it.pai).sort());
-            console.log(this.current_naki_selected);
+            console.log("cns=" + JSON.stringify(this.current_naki_selected));
+            this.current_naki_selected.forEach(it => {
+                if (it.type !== "ron") {
+                    it.show = it.show.concat(it.pai).sort()
+                }
+            });
 
             this.nakiExecute(this.current_naki_selected);
         });
@@ -440,7 +444,7 @@ class GameState {
         agari = createAgari(agari);
 
         // クライアントに通知
-        socket.emit('agari', agari);
+        this.io.in(this.room).emit('agari', agari);
     }
 
     gameStart() {
