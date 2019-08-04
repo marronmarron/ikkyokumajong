@@ -467,7 +467,7 @@ class GameState {
         this.yama = _.shuffle([...Array(136).keys()]);
         this.haipai();
         this.tsumo(false);
-        this.printEverySecond();
+        this.printEvery10Seconds();
     }
 
     printEvery10Seconds() {
