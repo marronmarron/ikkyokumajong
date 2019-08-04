@@ -395,6 +395,7 @@ class GameState {
     }
 
     turnUpdate(nextTurn) {
+        this.dahai_wait = true;
         // リーチ成立
         if(this.player[this.turn].is_reach_try) {
             this.player[this.turn].is_reach_try = false;
@@ -425,7 +426,6 @@ class GameState {
             .map(it => 6 + 4 * Math.floor(it.pai/4) - _.sum(it.show.concat(it.pai)))
             .filter(it => player.tehai.includes(it));
 
-        this.dahai_wait = true;
         // クライアントに通知(番の人にだけパラメータ送信)
         _.forEach(this.player, p => {
             this.io.to(p.id).emit('tsumo', this.turn !== p.kaze ? { who: this.turn, is_rinshan: is_rinshan } : {
@@ -470,11 +470,11 @@ class GameState {
         this.printEverySecond();
     }
 
-    printEverySecond() {
+    printEvery10Seconds() {
         console.log(this.dahai_wait);
         setTimeout(() => {
-            this.printEverySecond();
-        }, 1000);
+            this.printEvery10Seconds();
+        }, 10000);
     }
 
     // 配牌
