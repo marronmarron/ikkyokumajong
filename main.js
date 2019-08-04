@@ -1,5 +1,5 @@
 const _ = require('lodash');
-const getShanten = require('./shanten');
+const sh = require('./shanten');
 const createAgari = require('./agari');
 
 class Player {
@@ -15,6 +15,8 @@ class Player {
     is_menzen = true;
     is_reach_try = false;
     is_reach = false;
+    is_double_reach = false; //todo
+    is_ippatu = false; //todo
     is_naki_turn = false;
     current_tsumo;
     shanten;
@@ -38,7 +40,7 @@ class Player {
             console.log("tehaiAdd error : tehai34=" + this.tehai34 + " pai=" + pai);
         }
         this.tehai34[pai34]++;
-        this.shanten = getShanten(this.tehai);
+        this.shanten = sh.getShanten(this.tehai);
     }
 
     tehaiRemove(pai) {
@@ -52,7 +54,7 @@ class Player {
             console.log("tehaiRemove error : tehai34=" + this.tehai34 + " pai=" + pai);
         }
         this.tehai34[pai34]--;
-        this.shanten = getShanten(this.tehai);
+        this.shanten = sh.getShanten(this.tehai);
     }
 
     naki(naki) {
@@ -156,7 +158,7 @@ class GameState {
                 const naki_list = [];
 
                 // ロンチェック
-                if(getShanten(p.tehai.concat(pai)) === -1) {
+                if(sh.getShanten(p.tehai.concat(pai)) === -1) {
                     naki_list.push({type: "ron", pai: pai})
                 }
 
@@ -295,8 +297,8 @@ class GameState {
                 return;
             }
             // テンパイじゃない人のリーチを弾く
-            if(getShanten(player.tehai) > 0) {
-                console.log("reach error : shanten=" + getShanten(player.tehai));
+            if(sh.getShanten(player.tehai) > 0) {
+                console.log("reach error : shanten=" + sh.getShanten(player.tehai));
                 return;
             }
             // 面前じゃない人のリーチを弾く
@@ -422,7 +424,7 @@ class GameState {
     // アガリの処理
     agari(agari) {
         // agari = {type, who, from, pai, tehai, fuuro}
-        if(getShanten(agari.tehai) !== -1) {
+        if(sh.getShanten(agari.tehai) !== -1) {
             console.log("agari error : tehai = " + agari.tehai);
             return;
         }
@@ -434,7 +436,7 @@ class GameState {
         }
 
         agari.dora = [this.yama[0]];
-        agari = createAgari(agari);
+        agari = createAgari(agari, this);
 
         // クライアントに通知
         this.io.in(this.room).emit('agari', agari);

@@ -55,7 +55,7 @@ function shantenKokushi(tehai34) {
     return shanten - head;
 }
 
-module.exports = function getShanten(tehai136) {
+function getShanten(tehai136) {
     const fuuro = 4 - Math.floor(tehai136.length/3);
     const head_candidate = [];
     const tehai34 = Array(34).fill(0);
@@ -72,4 +72,11 @@ module.exports = function getShanten(tehai136) {
         shantenChitoi(tehai34, head_candidate),
         shantenKokushi(tehai34)
     ]);
+};
+
+module.exports = {
+    getShanten,
+    shantenNormal,
+    shantenChitoi,
+    shantenKokushi,
 };
