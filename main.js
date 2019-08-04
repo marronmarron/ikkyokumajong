@@ -100,6 +100,7 @@ class GameState {
     current_dahai = -1;
     current_naki_wait = [];
     current_naki_selected = [];
+    dahai_wait = true;
 
     constructor(io, room) {
         this.io = io;
@@ -122,6 +123,10 @@ class GameState {
 
         // 打牌時の処理
         socket.on('dahai', pai => {
+            if(!this.dahai_wait) {
+                console.log("dahai handler validated.");
+                return;
+            }
             console.log("dahai");
             const player = this.player[this.turn];
             const pai34 = Math.floor(pai/4);
@@ -206,6 +211,7 @@ class GameState {
                 // クライアントに鳴けることを通知
                 p.naki_candidate = naki_list;
                 if(naki_list.length) {
+                    this.dahai_wait = false;
                     this.current_naki_wait.push(p.kaze);
                     this.io.to(p.id).emit('naki_select', naki_list);
                 }
@@ -213,6 +219,8 @@ class GameState {
 
             // 打牌の更新
             this.current_dahai = pai;
+
+            console.log("CNW + " + this.current_naki_wait);
 
             // 鳴き待ちが発生したら抜けて、鳴き通知を待つ。
             if(this.current_naki_wait.length) {
@@ -225,6 +233,10 @@ class GameState {
         });
 
         socket.on('naki', naki_selected => {
+            if(this.dahai_wait) {
+                console.log("naki handler validated.");
+                return;
+            }
             console.log(naki_selected);
             const who = _.find(this.player, p => p.id === socket.id);
 
@@ -241,11 +253,17 @@ class GameState {
                 who.naki_selected = naki_selected;
             }
 
+            if(!this.current_naki_wait.includes(who.kaze)) {
+                console.log("errrrrrrrror");
+                return;
+            }
             this.current_naki_wait = this.current_naki_wait.filter(it => it !== who.kaze);
             if(this.current_naki_wait.length) {
                 console.log("current naki wait = player" + this.current_naki_wait);
                 return;
             }
+
+            console.log("current_naki_wait.length = " + this.current_naki_wait.length);
 
             _.forEach(this.player, p => {
                 if(p.naki_selected) {
@@ -278,6 +296,7 @@ class GameState {
 
         // ツモアガリ
         socket.on('tsumo', () => {
+            console.log("tsumo handler");
             this.agari({
                 type: "tsumo",
                 who: this.turn,
@@ -329,6 +348,8 @@ class GameState {
     }
 
     nakiExecute(naki_candidate) {
+        console.log("nakiExecute");
+        console.log(JSON.stringify(naki_candidate));
         const ron = naki_candidate.filter(it => it.type === "ron");
         const kan = naki_candidate.filter(it => it.type === "kan");
         const pon = naki_candidate.filter(it => it.type === "pon");
@@ -376,6 +397,7 @@ class GameState {
     }
 
     turnUpdate(nextTurn) {
+        this.dahai_wait = true;
         // リーチ成立
         if(this.player[this.turn].is_reach_try) {
             this.player[this.turn].is_reach_try = false;
@@ -411,7 +433,7 @@ class GameState {
             this.io.to(p.id).emit('tsumo', this.turn !== p.kaze ? { who: this.turn, is_rinshan: is_rinshan } : {
                 who: this.turn,
                 pai: pai,
-                can_reach: player.shanten <= 0 && !p.is_reach,
+                can_reach: player.shanten <= 0 && p.is_menzen && !p.is_reach,
                 ankan_candidate: ankan_candidate,
                 kakan_candidate: kakan_candidate,
                 can_hora: player.shanten === -1,
@@ -447,6 +469,14 @@ class GameState {
         this.yama = _.shuffle([...Array(136).keys()]);
         this.haipai();
         this.tsumo(false);
+        this.printEvery10Seconds();
+    }
+
+    printEvery10Seconds() {
+        console.log(this.dahai_wait);
+        setTimeout(() => {
+            this.printEvery10Seconds();
+        }, 10000);
     }
 
     // 配牌
