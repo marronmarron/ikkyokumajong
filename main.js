@@ -149,8 +149,7 @@ class GameState {
             }
             // クライアントに通知 + 確認
             console.log('dahai : player=' + this.turn + ' pai=' + pai);
-            // this.io.in(this.room).emit('dahai', this.turn, pai);
-            this.io.in(this.room).emit('dahai', this.turn, 17);
+            this.io.in(this.room).emit('dahai', this.turn, pai);
 
             //鳴けるorロンできるかをクライアントに通知
             _.forEach(this.player.filter(it => it !== player), p => {
@@ -214,7 +213,7 @@ class GameState {
             this.current_dahai = pai;
 
             // 鳴き待ちが発生したら抜けて、鳴き通知を待つ。
-            if(this.current_naki_wait) {
+            if(this.current_naki_wait.length) {
                 console.log("naki waiting");
                 return;
             }
@@ -252,12 +251,6 @@ class GameState {
                 }
             });
             console.log("cns=" + JSON.stringify(this.current_naki_selected));
-            this.current_naki_selected.forEach(it => {
-                if (it.type !== "ron") {
-                    it.show = it.show.concat(it.pai).sort()
-                }
-            });
-
             this.nakiExecute(this.current_naki_selected);
         });
 
@@ -401,8 +394,7 @@ class GameState {
     tsumo(is_rinshan) {
         const player = this.player[this.turn];
         player.is_naki_turn = false;
-        // const pai = this.yama.pop();
-        const pai = 17;
+        const pai = this.yama.pop();
         player.current_tsumo = pai;
         this.player[this.turn].tehaiAdd(pai);
         console.log('tsumo : player=' + this.turn + ' pai=' + pai + ' shanten=' + player.shanten);
@@ -463,8 +455,7 @@ class GameState {
         _.forEach(this.player, p => {
             const tehai = [];
             _.times(13, () => tehai.push(this.yama.pop()));
-            // p.tehai = tehai.sort((a, b) => a - b);
-            p.tehai = [8,12,16,18,19,20,24,129,130,131,133,134,135];
+            p.tehai = tehai.sort((a, b) => a - b);
             p.tehai34 = Array(34).fill(0);
             _.forEach(p.tehai, pai => p.tehai34[Math.floor(pai/4)]++);
             this.io.to(p.id).emit('haipai', p.tehai, p.kaze, dora, dice1, dice2);
