@@ -55,6 +55,9 @@ class Player {
 
     naki(naki) {
         console.log("naki : type=" + naki.type);
+        if(naki.type !== 'ankan') {
+            this.is_menzen = false;
+        }
         this.fuuro.push(naki);
         naki.show.forEach(it => this.tehaiRemove(it));
     }
@@ -221,6 +224,7 @@ class GameState {
                     this.current_naki_selected.push(p.naki_selected);
                 }
             });
+            this.current_naki_selected.forEach(it => it.show = it.show.concat(it.pai).sort());
             console.log(this.current_naki_selected);
             const ron = this.current_naki_selected.filter(it => it.type === "ron");
             const kan = this.current_naki_selected.filter(it => it.type === "kan");
@@ -230,11 +234,13 @@ class GameState {
             if(ron.length) {
                 console.log(ron);
                 _.forEach(ron, r => {
-                    this.io.in(this.room).emit('ron', {
+                    this.agari({
+                        type: "ron",
                         who: r.who,
                         from: this.turn,
                         pai: this.current_dahai,
                         tehai: this.player[r.who].tehai.concat(this.current_dahai),
+                        fuuro: this.player[r.who].fuuro,
                     });
                 });
                 return;
@@ -266,41 +272,33 @@ class GameState {
             this.tsumo(true);
         });
 
-        // アガリ時の処理(古い)
-        socket.on('agari', () => {
-            // アガリ情報を変数化
-            const who = _.find(this.player, p => p.id === socket.id);
-            const from = this.player[this.turn];
-            const type = (who === from) ? "tsumo" : "ron";
-            const pai = (type === "tsumo") ? who.current_tsumo : this.current_dahai;
-
-            // ロンなら手牌にアガリ牌を入れてshanten = -1にしておく
-            if(type === "ron") {
-                who.tehai.push(pai);
-                who.tehai34[pai]++;
-            }
-            // アガれていない手牌を弾く
-            if(getShanten(who.tehai) !== -1) {
-                console.log("agari error : tehai = " + who.tehai);
-                if(type === "ron") {
-                    who.tehai = _.filter(who.tehai, p !== pai);
-                }
-                return;
-            }
-            // TODO 符計算/役計算/点数計算
-            const fu = 40;
-            const yaku = {"reach": 1, "tanyao": 1};
-            const ten = [-2600, 0, 0, 2600];
-
-            // クライアントに通知
-            socket.emit('agari', {
-                who: who,
-                from: from,
-                type: type,
+        socket.on('kakan', pai => {
+            const pai34 = Math.floor(pai/4);
+            const ponId = this.player[this.turn].fuuro.findIndex(it =>
+                it.type === "pon" && Math.floor(it.pai/4) === pai34);
+            const pon = this.player[this.turn].fuuro[ponId];
+            this.player[this.turn].fuuro[ponId] = {
+                type: "kakan",
                 pai: pai,
-                fu: fu,
-                yaku: yaku,
-                ten: ten,
+                show: pon.show.concat(pon.pai),
+            };
+
+            // TODO なき通知
+            // TODO チャンカンチェック
+
+            this.turnUpdate(this.turn);
+            this.tsumo(true);
+        });
+
+        // ツモアガリ
+        socket.on('tsumo', () => {
+            this.agari({
+                type: "tsumo",
+                who: this.turn,
+                from: this.turn,
+                pai: this.player[this.turn].current_tsumo,
+                tehai: this.player[this.turn].tehai,
+                fuuro: this.player[this.turn].fuuro,
             });
         });
 
@@ -379,6 +377,27 @@ class GameState {
                 is_rinshan: is_rinshan,
             });
         });
+    }
+
+    // アガリの処理
+    agari(agari) {
+        // agari = {type, who, from, pai, tehai, fuuro}
+        if(getShanten(agari.tehai) !== -1) {
+            console.log("agari error : tehai = " + agari.tehai);
+            return;
+        }
+
+        // TODO 符計算/役計算/点数計算
+        agari.fu = 40;
+        agari.yaku = [
+            {name: "リーチ", han: 1},
+            {name: "タンヤオ", han: 1},
+            {name: "ドラ", han: 1},
+        ];
+        agari.ten = [-5200, 0, 0, 5200];
+
+        // クライアントに通知
+        socket.emit('agari', agari);
     }
 
     gameStart() {
