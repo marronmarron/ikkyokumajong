@@ -1,5 +1,6 @@
 const _ = require('lodash');
 const getShanten = require('./shanten');
+const createAgari = require('./agari');
 
 class Player {
     socket;
@@ -252,7 +253,7 @@ class GameState {
             this.current_naki_selected.forEach(it => it.show = it.show.concat(it.pai).sort());
             console.log(this.current_naki_selected);
 
-            this.naki_execute(this.current_naki_selected);
+            this.nakiExecute(this.current_naki_selected);
         });
 
         socket.on('kakan', pai => {
@@ -300,6 +301,17 @@ class GameState {
                 console.log("reach error : shanten=" + getShanten(player.tehai));
                 return;
             }
+            // 面前じゃない人のリーチを弾く
+            if(!player.is_menzen) {
+                console.log("reach error : player is not menzen.");
+                return;
+            }
+            // すでにリーチしている
+            if(player.is_reach_try || player.is_reach) {
+                console.log("player is already reached or reach tried.");
+                return;
+            }
+
             // リーチ宣言状態にする(打牌が通った時にリーチ成立)
             player.is_reach_try = true;
 
@@ -316,7 +328,7 @@ class GameState {
         });
     }
 
-    naki_execute(naki_candidate) {
+    nakiExecute(naki_candidate) {
         const ron = naki_candidate.filter(it => it.type === "ron");
         const kan = naki_candidate.filter(it => it.type === "kan");
         const pon = naki_candidate.filter(it => it.type === "pon");
@@ -379,6 +391,7 @@ class GameState {
         _.forEach(this.player, p => p.naki_candidate = null);
         _.forEach(this.player, p => p.naki_selected = null);
     }
+
     // ツモ時の処理
     tsumo(is_rinshan) {
         const player = this.player[this.turn];
@@ -417,19 +430,14 @@ class GameState {
             return;
         }
 
+        // 鳴きの直後はアガれない
         if(this.player[this.turn].is_naki_turn) {
             console.log("agari error : player is naki turn.");
             return;
         }
 
-        // TODO 符計算/役計算/点数計算
-        agari.fu = 40;
-        agari.yaku = [
-            {name: "リーチ", han: 1},
-            {name: "タンヤオ", han: 1},
-            {name: "ドラ", han: 1},
-        ];
-        agari.ten = [-5200, 0, 0, 5200];
+        agari.dora = [this.yama[0]];
+        agari = createAgari(agari);
 
         // クライアントに通知
         socket.emit('agari', agari);
