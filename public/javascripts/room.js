@@ -50,13 +50,14 @@ let yama;
 let num_normal_tsumo;
 let num_rinshan_tsumo;
 let dora;
-let turn;
 let tsumo_or_naki;
 
 let ho;
 let sarashi;
 let is_reach;
 let len_tehai;
+
+let listener;
 
 socket.on('haipai', (tehai_, jikaze_, dora_, dice1, dice2) => {
     console.log(tehai_);
@@ -71,7 +72,6 @@ socket.on('haipai', (tehai_, jikaze_, dora_, dice1, dice2) => {
     for (let i=0; i<52; ++i) {
         yama[(pos_kaimen + i) % 136] = false;
     }
-    turn = -1;
     num_normal_tsumo = 0;
     num_rinshan_tsumo = 0;
     len_tehai = [13, 13, 13, 13];
@@ -81,6 +81,7 @@ socket.on('haipai', (tehai_, jikaze_, dora_, dice1, dice2) => {
     tehai.sort((a, b) => a - b);
     drawAll();
     is_reach = [false, false, false, false];
+    listener = new Map();
 });
 
 socket.on('tsumo', function (tsumo) {
@@ -91,49 +92,95 @@ socket.on('tsumo', function (tsumo) {
         ++num_rinshan_tsumo;
         yama[(136 + pos_kaimen - num_rinshan_tsumo) % 136] = false;
     } else {
-        turn = (turn + 1) % 4;
         yama[(pos_kaimen + 52 + num_normal_tsumo) % 136] = false;
         ++num_normal_tsumo;
     }
-    ++len_tehai[turn];
-    if (turn === jikaze) {
+    ++len_tehai[tsumo.who];
+    if (tsumo.who === jikaze) {
         tehai.push(tsumo.pai);
-        createOneTimeListener(canvas, 'click', onClickDahai);
     }
     drawAll();
+    if (tsumo.who !== jikaze) return;
+    if (tsumo.can_hora) {
+        ctx.fillStyle = popup_back_color;
+        ctx.fillRect(x_tsumo, y_tsumo, w_popup, h_popup);
+        ctx.fillStyle = popup_text_color;
+        ctx.fillText("ツモ", x_tsumo, y_tsumo);
+    }
+    if (tsumo.can_reach) {
+        ctx.fillStyle = popup_back_color;
+        ctx.fillRect(x_reach, y_reach, w_popup, h_popup);
+        ctx.fillStyle = popup_text_color;
+        ctx.fillText("リーチ", x_reach, y_reach);
+    }
+    let reach_clicked = false;
+    registerListener('click', (e) => {
+        const rect = e.target.getBoundingClientRect();
+        const x	= e.clientX - Math.floor(rect.left);
+        const y	= e.clientY - Math.floor(rect.top);
+        if (!reach_clicked && tsumo.can_reach && x >= x_reach && x <= x_reach + w_popup && y >= y_reach && y <= y_reach + h_popup) {
+            reach_clicked = true;
+            socket.emit("reach");
+            ctx.clearRect(x_reach, y_reach, w_popup, h_popup);
+            ctx.clearRect(x_tsumo, y_tsumo, w_popup, h_popup);
+            return;
+        }
+        if (!reach_clicked && tsumo.can_hora && x >= x_tsumo && x <= x_tsumo + w_popup && y >= y_tsumo && y <= y_tsumo + h_popup) {
+            socket.emit("tsumo");
+            return;
+        }
+        onClickDahai(e);
+    })
 });
 
-socket.on('naki', naki => {//from, pai使わない
+socket.on('reach', (player) => {
+    console.log("reach : player=" + player);
+    is_reach[player] = true;
+    drawReach(player);
+});
+
+socket.on('ron', ron => {
+    console.log("ron!");
+    console.log(ron);
+    removeListener();
+});
+
+socket.on('tsumo', tsumo => {
+    console.log("ron!");
+    console.log(tsumo);
+    removeListener();
+});
+
+socket.on('naki', naki => {
     console.log("naki!");
     console.log(naki);
-    const pai = ho[turn].pop();
+    removeListener();
+    ho[naki.from].pop();
     const naita = new Map([
-        ["from", turn],
-        ["pai", pai],
+        ["from", naki.from],
+        ["pai", naki.pai],
         ["show", naki.show]
     ]);
-    turn = naki.who;
     tsumo_or_naki = "naki";
-    len_tehai[turn] -= naki.show.length;
-    sarashi[turn].push(naita);
-    if (turn === jikaze) {
+    len_tehai[naki.who] -= naki.show.length;
+    sarashi[naki.who].push(naita);
+    if (naki.who === jikaze) {
         for (p of naki.show) {
             tehai.splice(tehai.indexOf(p), 1);
-            createOneTimeListener(canvas, 'click', onClickDahai);
         }
+        registerListener('click', onClickDahai);
     }
     drawAll();
 });
 
-socket.on('dahai', (_, pai) => {
+socket.on('dahai', (who, pai) => {
     console.log('dahai: pai=' + pai);
-    ho[turn].push(pai);
+    removeListener();
+    ho[who].push(pai);
     --len_tehai;
-    if (jikaze === turn) {
-        console.log("be: " + tehai);
+    if (jikaze === who) {
         tehai.splice(tehai.indexOf(pai), 1);
         tehai.sort((a, b) => a - b);
-        console.log("af: " + tehai);
     }
     drawAll();
 });
@@ -154,21 +201,25 @@ socket.on('naki_select',(naki) => {
                 break;
         }
     });
-    createOneTimeListener(canvas, 'click', (e) => {
+    registerListener("click", (e) => {
         const rect = e.target.getBoundingClientRect();
         const x	= e.clientX - Math.floor(rect.left);
         const y	= e.clientY - Math.floor(rect.top);
         if (x >= x_pass && x <= x_pass + w_popup && y >= y_pass && y <= y_pass + h_popup) {
             console.log("pass clicked");
             socket.emit('naki', {type: "pass"});
-            return true;
+            ctx.clearRect(x_pass, y_pass, w_popup, h_popup);
+            ctx.clearRect(x_ron, y_ron, w_popup, h_popup);
+            return;
         }
         for (let i=0; i<naki.length; ++i) {
             if (naki[i].type === 'ron') {
                 if (x >= x_ron && x <= x_ron + w_popup && y >= y_ron && y <= y_ron + h_popup) {
                     console.log("ron clicked");
                     socket.emit('naki', naki[i]);
-                    return true;
+                    ctx.clearRect(x_pass, y_pass, w_popup, h_popup);
+                    ctx.clearRect(x_ron, y_ron, w_popup, h_popup);
+                    return;
                 }
                 continue;
             }
@@ -178,10 +229,9 @@ socket.on('naki_select',(naki) => {
             if (x >= le_x && x <= le_x + tehai_img[0].width && y >= y_tehaileft && y <= y_tehaileft + tehai_img[0].height) {
                 console.log("naki clicked");
                 socket.emit('naki', naki[i]);
-                return true;
+                return;
             }
         }
-        return false;
     });
 });
 
@@ -197,18 +247,20 @@ function onClickDahai(e) {
         }
         if (x > left && x < left + tehai_img[0].width) {
             socket.emit('dahai', tehai[i]);
-            return true;
+            return;
         }
         left += tehai_img[0].width;
     }
 }
 
-function createOneTimeListener(element, event, listener) {
-	element.addEventListener(event, function(e) {
-        if (listener(e)) {
-            element.removeEventListener(event, arguments.callee);
-        }
-	});
+function registerListener(event, fun) {
+    listener.set("event", event);
+    listener.set("name", fun);
+    canvas.addEventListener(event, fun);
+}
+
+function removeListener() {
+    canvas.removeEventListener(listener.get("event"), listener.get("name"));
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -222,8 +274,6 @@ function drawAll() {
 }
 
 function drawMe() {
-    console.log("drawme");
-    console.log(tehai);
     let left = x_tehaileft;
     for (let i = 0; i < tehai.length; ++i) {
         if (i === tehai.length - 1 && tehai.length % 3 === 2 && tsumo_or_naki === 'tsumo') {
