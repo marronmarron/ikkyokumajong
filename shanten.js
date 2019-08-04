@@ -28,14 +28,14 @@ function mtCalculate(tehai34) {
     return mt;
 }
 
-function shantenNormal(tehai34, head_candidate) {
+function shantenNormal(tehai34, head_candidate, fuuro) {
     const mt = mtCalculate(tehai34);
-    let shanten = 8 - 2*Math.floor(mt/10) - Math.min(4-Math.floor(mt/10), mt%10);
+    let shanten = 8 - 2*(fuuro+Math.floor(mt/10)) - Math.min(4-fuuro-Math.floor(mt/10), mt%10);
     _.forEach(head_candidate, head => {
         tehai34[head] -= 2;
         const mt = mtCalculate(tehai34);
         tehai34[head] += 2;
-        shanten = Math.min(shanten, 7 - 2*Math.floor(mt/10) - Math.min(4-Math.floor(mt/10), mt%10));
+        shanten = Math.min(shanten, 7 - 2*(fuuro+Math.floor(mt/10)) - Math.min(4-fuuro-Math.floor(mt/10), mt%10));
     });
     return shanten;
 }
@@ -56,6 +56,7 @@ function shantenKokushi(tehai34) {
 }
 
 module.exports = function getShanten(tehai136) {
+    const fuuro = 4 - Math.floor(tehai136.length/3);
     const head_candidate = [];
     const tehai34 = Array(34).fill(0);
     _.forEach(tehai136, pai136 => {
@@ -65,8 +66,9 @@ module.exports = function getShanten(tehai136) {
         }
     });
 
-    return _.min([
-        shantenNormal(tehai34, head_candidate),
+
+    return fuuro > 0 ? shantenNormal(tehai34, head_candidate, fuuro) : _.min([
+        shantenNormal(tehai34, head_candidate, 0),
         shantenChitoi(tehai34, head_candidate),
         shantenKokushi(tehai34)
     ]);
