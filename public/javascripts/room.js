@@ -6,7 +6,7 @@ const ctx = canvas.getContext('2d');
 function load_imgs(dir) {
     let imgs = [];
     for (let i=0; i<34; ++i) {
-        let img = new Image();
+        const img = new Image();
         img.src = "./images/" + dir + "/" + i + ".gif"
         imgs.push(img);
     }
@@ -14,9 +14,15 @@ function load_imgs(dir) {
 }
 
 const tehai_img = load_imgs("pai");
-let ho_img = [];
+const ho_img = [];
 for (let i=0; i<4; ++i) {
     ho_img.push(load_imgs("pai_" + i));
+}
+const rebou_img = [];
+for (let i=0; i<2; ++i) {
+    const img = new Image();
+    img.src = "./images/rebou" + i + ".gif";
+    rebou_img.push(img);
 }
 
 document.getElementById('restart-button').addEventListener("click", ()=>{
@@ -79,8 +85,8 @@ socket.on('haipai', (tehai_, jikaze_, dora_, dice1, dice2) => {
     sarashi = [[], [], [], []];
     tehai = tehai_;
     tehai.sort((a, b) => a - b);
-    drawAll();
     is_reach = [false, false, false, false];
+    drawAll();
     listener = new Map();
 });
 
@@ -129,8 +135,8 @@ socket.on('tsumo', function (tsumo) {
             socket.emit("tsumo");
             return;
         }
-        onClickDahai(e);
-    })
+        onClickDahai(x, y);
+    });
 });
 
 socket.on('reach', (player) => {
@@ -146,7 +152,7 @@ socket.on('ron', ron => {
 });
 
 socket.on('tsumo', tsumo => {
-    console.log("ron!");
+    console.log("tsumo!");
     console.log(tsumo);
     removeListener();
 });
@@ -168,7 +174,12 @@ socket.on('naki', naki => {
         for (p of naki.show) {
             tehai.splice(tehai.indexOf(p), 1);
         }
-        registerListener('click', onClickDahai);
+        registerListener('click', (e) => {
+            const rect = e.target.getBoundingClientRect();
+            const x	= e.clientX - Math.floor(rect.left);
+            const y	= e.clientY - Math.floor(rect.top);
+            onClickDahai(x, y);
+        });
     }
     drawAll();
 });
@@ -235,10 +246,7 @@ socket.on('naki_select',(naki) => {
     });
 });
 
-function onClickDahai(e) {
-    var rect = e.target.getBoundingClientRect();
-    const x	= e.clientX - Math.floor(rect.left);
-    const y	= e.clientY - Math.floor(rect.top);
+function onClickDahai(x, y) {
     if (x < x_tehaileft || y > y_tehaileft + tehai_img[0].height || y < y_tehaileft) return false;
     let left = x_tehaileft;
     for (let i=0; i<tehai.length; ++i) {
@@ -270,6 +278,9 @@ function drawAll() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     drawMe();
     drawHo();
+    for (let i=0; i<4; ++i) {
+        if (is_reach[i]) drawReach(i);
+    }
     console.log(sarashi);
 }
 
@@ -355,4 +366,19 @@ function drawHo() {
     drawShimoHo(mag);
     drawToimenHo(mag);
     drawKamiHo(mag);
+}
+
+function drawReach(player) {
+    let cx = canvas.width / 2;
+    let cy = canvas.height / 2;
+    if (player % 2 == 0) {
+        cy += (player - 1) * 60;
+    } else {
+        cx += (2 - player) * 60;
+    }
+    ctx.drawImage(rebou_img[player % 2], cx, cy);
+}
+
+function drawSarashi(player) {
+
 }
