@@ -55,8 +55,8 @@ const pai_tate = 38;
 
 
 let tehai;
-let jikaze;
 let tsumopai;
+let jikaze;
 
 let pos_kaimen;
 let yama;
@@ -68,6 +68,7 @@ let turn;
 let ho;
 let sarashi;
 let is_reach;
+let len_tehai;
 
 
 const eventListenerMap = new Map();
@@ -89,21 +90,19 @@ socket.on('haipai', (tehai_, jikaze_, dora_, dice1, dice2) => {
     turn = -1;
     num_normal_tsumo = 0;
     num_rinshan_tsumo = 0;
-    ho = Array(4);
-    ho.fill([]);
-
-    sarashi = Array(4);
-    sarashi.fill([]);
+    len_tehai = [13, 13, 13, 13];
+    ho = [[], [], [], []];
+    sarashi = [[], [], [], []];
     tehai = tehai_;
     tehai.sort((a, b) => a - b);
     drawAll();
-    is_reach = Array(4);
-    is_reach.fill([]);
+    is_reach = [false, false, false, false];
 });
 
 socket.on('tsumo', function (tsumo) {
     console.log(tsumo);
     turn = (turn + 1) % 4;
+    ++len_tehai[turn];
     yama[(pos_kaimen + 52 + num_normal_tsumo) % 136] = false;
     ++num_normal_tsumo;
     if (turn === jikaze) {
@@ -144,18 +143,34 @@ socket.on('ron', ron => {
     console.log(ron);
 });
 
-socket.on('naki', naki => {
-    // TODO 誰かがロンした通知の処理
+socket.on('naki', naki => {//from使わない
     console.log("naki!");
     console.log(naki);
+    ho[turn].pop();
+    const naita = new Map([
+        ["from", turn],
+        ["pai", naki.pai],
+        ["show", naki.show]
+    ]);
+    turn = naki.who;
+    len_tehai[turn] -= naki.show.length;
+    sarashi[turn].push(naita);
+    if (turn === jikaze) {
+        for (p of naki.show) {
+            tehai.splice(tehai.indexOf(p), 1);
+            createOneTimeListener(canvas, 'click', onClickDahai);
+        }
+    }
+    drawAll();
 });
 
 
-socket.on('dahai', (turn_, pai) => {
-    console.log('dahai: turn=' + turn_ +' pai=' + pai);
-    ho.push(pai);
+socket.on('dahai', (_, pai) => {
+    console.log('dahai: pai=' + pai);
+    ho[turn].push(pai);
+    --len_tehai;
     if (jikaze === turn) {
-        tehai.push(tsumopai);
+        if (tsumopai !== -1) tehai.push(tsumopai);
         tehai.splice(tehai.indexOf(pai), 1);
         tehai.sort((a, b) => a - b);
     }
@@ -227,7 +242,7 @@ function onClickDahai(e) {
             return true;
         }
     }
-    if (x >= tsumo_left && x < tsumo_left + tehai_img[0].width) {
+    if (tsumopai !== -1 && x >= tsumo_left && x < tsumo_left + tehai_img[0].width) {
         socket.emit('dahai', tsumopai);
         return true;
     }
@@ -235,7 +250,7 @@ function onClickDahai(e) {
 
 function drawMe() {
     let le = left;
-    for (let i = 0; i < 13 - 3 * sarashi[jikaze].length; i++) {
+    for (let i = 0; i < tehai.length; i++) {
         ctx.drawImage(tehai_img[Math.floor(tehai[i] / 4)], le, canvas.height - tehai_img[0].height);
         le += tehai_img[0].width;
     }
@@ -326,7 +341,7 @@ function drawShimo() {
 function drawToimen() {
     let toi = (jikaze + 2) % 4;
     let right = (canvas.width + 13 * ura_img[0].width) / 2 - ura_img[0].width;
-    for (let i = 0; i < 13 - 3 * sarashi[toi]; i++) {
+    for (let i = 0; i < len_tehai[toi]; i++) {
         ctx.drawImage(ura_img[0], right, 0);
         right -= ura_img[0].width;
     }
@@ -360,7 +375,7 @@ function drawYama() {
         const wid = yama_img[1].width;
         const hei = yama_img[1].height * mag_yoko;
         for (let i=34+b; i<68; i+=2) {
-            if ((i + 6) % 136 == pos_kaimen) ctx.drawImage(ho_img[1][Math.floor([0]/4)], lx, ly, wid, hei);
+            if ((i + 6) % 136 == pos_kaimen) ctx.drawImage(ho_img[1][Math.floor(dora[0]/4)], lx, ly, wid, hei);
             else if (yama[i]) ctx.drawImage(yama_img[1], lx, ly, wid ,hei);
             ly += pai_yoko;
         }
@@ -382,7 +397,7 @@ function drawYama() {
         const wid = yama_img[0].width * mag_tate;
         const hei = yama_img[0].height * mag_tate;
         for (let i=100+b; i>=68; i-=2) {
-            if ((i + 6) % 136 == pos_kaimen) ctx.drawImage(ho_img[0][Math.floor([0]/4)], lx, ly, wid, hei);
+            if ((i + 6) % 136 == pos_kaimen) ctx.drawImage(ho_img[0][Math.floor(dora[0]/4)], lx, ly, wid, hei);
             else if (yama[i]) ctx.drawImage(yama_img[0], lx, ly, wid ,hei);
             lx += wid;
         }
@@ -397,6 +412,7 @@ function drawAll() {
     drawToimen();
     drawKami();
     drawYama();
+    console.log(sarashi);
 }
 
 function drawNakiPrompt(naki_type, ...nakeru_pai) {
