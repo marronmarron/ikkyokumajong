@@ -120,6 +120,7 @@ class GameState {
 
         // 打牌時の処理
         socket.on('dahai', pai => {
+            console.log("dahai");
             const player = this.player[this.turn];
             const pai34 = Math.floor(pai/4);
             // 番じゃないdahaiを弾く
@@ -219,10 +220,10 @@ class GameState {
             }
 
             this.turnUpdate((this.turn+1)%4);
-            this.tsumo(true);
+            this.tsumo(false);
         });
 
-        socket.on('naki', naki_selected => {
+        socket.on('naki', async naki_selected => {
             console.log(naki_selected);
             const who = _.find(this.player, p => p.id === socket.id);
 
@@ -257,7 +258,7 @@ class GameState {
                 }
             });
 
-            this.nakiExecute(this.current_naki_selected);
+            await this.nakiExecute(this.current_naki_selected);
         });
 
         socket.on('kakan', pai => {
@@ -332,7 +333,7 @@ class GameState {
         });
     }
 
-    nakiExecute(naki_candidate) {
+    async nakiExecute(naki_candidate) {
         const ron = naki_candidate.filter(it => it.type === "ron");
         const kan = naki_candidate.filter(it => it.type === "kan");
         const pon = naki_candidate.filter(it => it.type === "pon");
@@ -375,11 +376,11 @@ class GameState {
             return;
         }
 
-        this.turnUpdate((this.turn+1)%4);
-        this.tsumo(true);
+        await this.turnUpdate((this.turn+1)%4);
+        this.tsumo(false);
     }
 
-    turnUpdate(nextTurn) {
+    async turnUpdate(nextTurn) {
         // リーチ成立
         if(this.player[this.turn].is_reach_try) {
             this.player[this.turn].is_reach_try = false;
@@ -416,7 +417,7 @@ class GameState {
             this.io.to(p.id).emit('tsumo', this.turn !== p.kaze ? { who: this.turn, is_rinshan: is_rinshan } : {
                 who: this.turn,
                 pai: pai,
-                can_reach: player.shanten <= 0 && p.is_reach,
+                can_reach: player.shanten <= 0 && !p.is_reach,
                 ankan_candidate: ankan_candidate,
                 kakan_candidate: kakan_candidate,
                 can_hora: player.shanten === -1,
@@ -451,7 +452,7 @@ class GameState {
         console.log("GAME START " + this.room);
         this.yama = _.shuffle([...Array(136).keys()]);
         this.haipai();
-        this.tsumo();
+        this.tsumo(false);
     }
 
     // 配牌
