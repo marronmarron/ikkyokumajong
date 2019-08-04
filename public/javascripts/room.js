@@ -21,7 +21,7 @@ for (let i=0; i<4; ++i) {
 const rebou_img = [];
 for (let i=0; i<2; ++i) {
     const img = new Image();
-    img.src = "./images/rebou" + i + ".gif";
+    img.src = "./images/rebou/" + i + ".gif";
     rebou_img.push(img);
 }
 
@@ -93,6 +93,7 @@ socket.on('haipai', (tehai_, jikaze_, dora_, dice1, dice2) => {
 socket.on('tsumo', function (tsumo) {
     console.log("tsumo");
     console.log(tsumo);
+    removeListener();
     tsumo_or_naki = "tsumo";
     if (tsumo.is_rinshan) {
         ++num_rinshan_tsumo;
@@ -145,15 +146,9 @@ socket.on('reach', (player) => {
     drawReach(player);
 });
 
-socket.on('ron', ron => {
-    console.log("ron!");
-    console.log(ron);
-    removeListener();
-});
-
-socket.on('tsumo', tsumo => {
-    console.log("tsumo!");
-    console.log(tsumo);
+socket.on('agari', agari => {
+    console.log("agari!");
+    console.log(agari);
     removeListener();
 });
 
