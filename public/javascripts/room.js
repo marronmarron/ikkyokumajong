@@ -93,6 +93,7 @@ socket.on('haipai', (tehai_, jikaze_, dora_, dice1, dice2) => {
 socket.on('tsumo', function (tsumo) {
     console.log("tsumo");
     console.log(tsumo);
+    removeListener();
     tsumo_or_naki = "tsumo";
     if (tsumo.is_rinshan) {
         ++num_rinshan_tsumo;
@@ -145,17 +146,6 @@ socket.on('reach', (player) => {
     drawReach(player);
 });
 
-socket.on('ron', ron => {
-    console.log("ron!");
-    console.log(ron);
-    removeListener();
-});
-
-socket.on('tsumo', tsumo => {
-    console.log("tsumo!");
-    console.log(tsumo);
-    removeListener();
-});
 
 socket.on('naki', naki => {
     console.log("naki!");
@@ -254,6 +244,7 @@ function onClickDahai(x, y) {
             left += 8;
         }
         if (x > left && x < left + tehai_img[0].width) {
+            console.log("emit dahai");
             socket.emit('dahai', tehai[i]);
             return;
         }
