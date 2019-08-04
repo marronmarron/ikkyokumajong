@@ -21,7 +21,7 @@ for (let i=0; i<4; ++i) {
 const rebou_img = [];
 for (let i=0; i<2; ++i) {
     const img = new Image();
-    img.src = "./images/rebou" + i + ".gif";
+    img.src = "./images/rebou/" + i + ".gif";
     rebou_img.push(img);
 }
 
@@ -122,6 +122,7 @@ socket.on('tsumo', function (tsumo) {
     }
     let reach_clicked = false;
     registerListener('click', (e) => {
+        console.log("listener tsumo");
         const rect = e.target.getBoundingClientRect();
         const x	= e.clientX - Math.floor(rect.left);
         const y	= e.clientY - Math.floor(rect.top);
@@ -146,6 +147,11 @@ socket.on('reach', (player) => {
     drawReach(player);
 });
 
+socket.on('agari', agari => {
+    console.log("agari!");
+    console.log(agari);
+    removeListener();
+});
 
 socket.on('naki', naki => {
     console.log("naki!");
@@ -165,6 +171,7 @@ socket.on('naki', naki => {
             tehai.splice(tehai.indexOf(p), 1);
         }
         registerListener('click', (e) => {
+            console.log("listener nakisute");
             const rect = e.target.getBoundingClientRect();
             const x	= e.clientX - Math.floor(rect.left);
             const y	= e.clientY - Math.floor(rect.top);
@@ -203,6 +210,7 @@ socket.on('naki_select',(naki) => {
         }
     });
     registerListener("click", (e) => {
+        console.log("listener nakiselect");
         const rect = e.target.getBoundingClientRect();
         const x	= e.clientX - Math.floor(rect.left);
         const y	= e.clientY - Math.floor(rect.top);
