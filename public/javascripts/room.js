@@ -158,14 +158,13 @@ socket.on('naki', naki => {
     console.log(naki);
     removeListener();
     ho[naki.from].pop();
-    const naita = new Map([
-        ["from", naki.from],
-        ["pai", naki.pai],
-        ["show", naki.show]
-    ]);
+    let sarashipai = naki.show;
+    let ind = (3 + naki.who - naki.from) % 4;
+    if (naki.type === 'kan' && ind === 2) ++ind;
+    sarashipai.splice(ind, 0, -naki.pai);
     tsumo_or_naki = "naki";
     len_tehai[naki.who] -= naki.show.length;
-    sarashi[naki.who].push(naita);
+    sarashi[naki.who].push(sarashipai);
     if (naki.who === jikaze) {
         for (p of naki.show) {
             tehai.splice(tehai.indexOf(p), 1);
@@ -277,6 +276,7 @@ function drawAll() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     drawMe();
     drawHo();
+    drawSarashi();
     for (let i=0; i<4; ++i) {
         if (is_reach[i]) drawReach(i);
     }
@@ -378,6 +378,50 @@ function drawReach(player) {
     ctx.drawImage(rebou_img[player % 2], cx, cy);
 }
 
-function drawSarashi(player) {
-
+function drawSarashi() {
+    const mag = 0.85;
+    const tate_img = ho_img;
+    const yoko_img = ho_img[ho_img[3], ho_img[0], ho_img[1], ho_img[2]];
+    const w_tate = [mag * ho_img[0][0].width, mag * ho_img[1][0].width, mag * ho_img[2][0].width, mag * ho_img[3][0].width];
+    const h_tate = [mag * ho_img[0][0].height, mag * ho_img[1][0].height, mag * ho_img[2][0].height, mag * ho_img[3][0].height];
+    const w_yoko = [w_tate[3], w_tate[0], w_tate[1], w_tate[2]];
+    const h_yoko = [h_tate[3], h_tate[0], h_tate[1], h_tate[2]];
+    const lx = [canvas.width, canvas.width - w_tate[1], 0, 0];
+    const ly = [canvas.height - h_tate[0], 0, 0, canvas.height];
+    const dx = [-1, 0, 1, 0];
+    const dy = [0, 1, 0, -1];
+    const naki_dx = [0, w_tate[1] - w_yoko[1], 0, 0];
+    const naki_dy = [h_tate[0] - h_yoko[0], 0, 0, 0];
+    for (let i=0; i<4; ++i) {
+        const kaze = (jikaze + i) % 4;
+        let x = lx[i];
+        let y = ly[i];
+        for (sara of sarashi[kaze]) {
+            for (pai of sara.reverse()) {
+                if (pai < 0) {
+                    if (i === 0 || i === 3) {
+                        x += dx[i] * w_yoko[i];
+                        y += dy[i] * h_yoko[i];
+                    }
+                    ctx.drawImage(ho_img[(3+i) % 4][Math.floor((-pai)/4)], x + naki_dx[i], y + naki_dy[i], w_yoko[i], h_yoko[i]);
+                    console.log('yoko: x=' + x + ' y=' + y);
+                    if (i === 1 || i === 2) {
+                        x += dx[i] * w_yoko[i];
+                        y += dy[i] * h_yoko[i];
+                    }
+                } else {
+                    if (i === 0 || i === 3) {
+                        x += dx[i] * w_tate[i];
+                        y += dy[i] * h_tate[i];
+                    }
+                    ctx.drawImage(ho_img[i][Math.floor(pai/4)], x, y, w_tate[i], h_tate[i]);
+                    console.log('tate: x=' + x + ' y=' + y);
+                    if (i === 1 || i === 2) {
+                        x += dx[i] * w_tate[i];
+                        y += dy[i] * h_tate[i];
+                    }
+                }
+            }
+        }
+    }
 }
