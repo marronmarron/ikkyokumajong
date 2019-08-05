@@ -161,7 +161,7 @@ socket.on('naki', naki => {
     let sarashipai = naki.show;
     let ind = (3 + naki.who - naki.from) % 4;
     if (naki.type === 'kan' && ind === 2) ++ind;
-    sarashipai.splice(ind, 0, -naki.pai);
+    sarashipai.splice(ind, 0, -naki.pai - 1);
     tsumo_or_naki = "naki";
     len_tehai[naki.who] -= naki.show.length;
     sarashi[naki.who].push(sarashipai);
@@ -379,6 +379,9 @@ function drawReach(player) {
 }
 
 function drawSarashi() {
+    const ymen_tate = 28;
+    const ymen_yoko = 38;
+    const kankaku = 6;
     const mag = 0.85;
     const tate_img = ho_img;
     const yoko_img = ho_img[ho_img[3], ho_img[0], ho_img[1], ho_img[2]];
@@ -386,42 +389,48 @@ function drawSarashi() {
     const h_tate = [mag * ho_img[0][0].height, mag * ho_img[1][0].height, mag * ho_img[2][0].height, mag * ho_img[3][0].height];
     const w_yoko = [w_tate[3], w_tate[0], w_tate[1], w_tate[2]];
     const h_yoko = [h_tate[3], h_tate[0], h_tate[1], h_tate[2]];
+    const dx_tate = [w_tate[0], 0, w_tate[2], 0];
+    const dx_yoko = [w_yoko[0], 0, w_yoko[2], 0];
+    const dy_tate = [0, ymen_tate, 0, ymen_tate];
+    const dy_yoko = [0, ymen_yoko, 0, ymen_yoko];
     const lx = [canvas.width, canvas.width - w_tate[1], 0, 0];
     const ly = [canvas.height - h_tate[0], 0, 0, canvas.height];
-    const dx = [-1, 0, 1, 0];
-    const dy = [0, 1, 0, -1];
     const naki_dx = [0, w_tate[1] - w_yoko[1], 0, 0];
     const naki_dy = [h_tate[0] - h_yoko[0], 0, 0, 0];
     for (let i=0; i<4; ++i) {
         const kaze = (jikaze + i) % 4;
-        let x = lx[i];
-        let y = ly[i];
-        for (sara of sarashi[kaze]) {
-            for (pai of sara.reverse()) {
-                if (pai < 0) {
-                    if (i === 0 || i === 3) {
-                        x += dx[i] * w_yoko[i];
-                        y += dy[i] * h_yoko[i];
-                    }
-                    ctx.drawImage(ho_img[(3+i) % 4][Math.floor((-pai)/4)], x + naki_dx[i], y + naki_dy[i], w_yoko[i], h_yoko[i]);
-                    console.log('yoko: x=' + x + ' y=' + y);
-                    if (i === 1 || i === 2) {
-                        x += dx[i] * w_yoko[i];
-                        y += dy[i] * h_yoko[i];
-                    }
-                } else {
-                    if (i === 0 || i === 3) {
-                        x += dx[i] * w_tate[i];
-                        y += dy[i] * h_tate[i];
-                    }
-                    ctx.drawImage(ho_img[i][Math.floor(pai/4)], x, y, w_tate[i], h_tate[i]);
-                    console.log('tate: x=' + x + ' y=' + y);
-                    if (i === 1 || i === 2) {
-                        x += dx[i] * w_tate[i];
-                        y += dy[i] * h_tate[i];
-                    }
+        const [nt, ny] = (() => {
+            let t = 0;
+            let y = 0;
+            for (sara of sarashi[kaze]) {
+                ++y;
+                for (pai of sara) {
+                    if (pai >= 0) ++t;
                 }
             }
+            return [t, y];
+        })();
+
+        let x = (i === 0) ? lx[i] - (nt * dx_tate[i] + ny * dx_yoko[i] + kankaku * (ny - 1)) : lx[i];
+        let y = (i === 3) ? ly[i] - (nt * dy_tate[i] + ny * dy_yoko[i] + kankaku * (ny - 1)) : ly[i];
+        const comps = (i === 0 || i === 3) ? sarashi[kaze].reverse() : sarashi[kaze];
+        for (sara of comps) {
+            const kumi = (i === 0 || i === 3) ? sara : sara.reverse();
+            for (pai of kumi) {
+                if (pai < 0) {
+                    ctx.drawImage(ho_img[(3+i) % 4][Math.floor((-pai-1)/4)], x + naki_dx[i], y + naki_dy[i], w_yoko[i], h_yoko[i]);
+                    console.log('yoko: x=' + x + ' y=' + y);
+                    x += dx_yoko[i];
+                    y += dy_yoko[i];
+                } else {
+                    ctx.drawImage(ho_img[i][Math.floor(pai/4)], x, y, w_tate[i], h_tate[i]);
+                    console.log('tate: x=' + x + ' y=' + y);
+                    x += dx_tate[i];
+                    y += dy_tate[i];
+                }
+            }
+            x += kankaku * ((i + 1) % 2);
+            y += kankaku * (i % 2);
         }
     }
 }
